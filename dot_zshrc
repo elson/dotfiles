@@ -142,4 +142,4 @@ export PATH=$PATH:$GOROOT/binsnyk-dev='SNYK_API="https://app.dev.snyk.io/api/v1"
 alias snyk-dev='SNYK_API="https://app.dev.snyk.io/api/v1" snyk'
 
 # Add Visual Studio Code (code)
-export PATH="\$PATH:/Applications/Visual Studio Code.app/Contents/Resources/app/bin"
+export PATH="$PATH:/Applications/Visual Studio Code.app/Contents/Resources/app/bin"
