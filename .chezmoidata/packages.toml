@@ -9,8 +9,10 @@
             "chezmoi",         # Dotfile manager
             "curl",
             "git",
+            "gpg",
             "gron",
             "jq",
+            "mise",            # Dev environment manager
             "openssl",         # SSL/TLS cryptography
             "ripgrep",         # Search tool
             "tree",
