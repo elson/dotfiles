@@ -102,7 +102,10 @@ fi
 # Compilation flags
 # export ARCHFLAGS="-arch $(uname -m)"
 
-# Activate mise
+### private
+[ ! -f "{{ .xdgConfigDir }}/shell/private.sh" ] || source "{{ .xdgConfigDir }}/shell/private.sh"
+
+### mise
 eval "$(mise activate zsh)"
 
 # Set personal aliases, overriding those provided by Oh My Zsh libs,

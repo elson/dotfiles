@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+
+### GitHub
+export GH_TOKEN={{ (bitwardenFields "item" .bitwarden.items.github).token.value }}
+export GITHUB_TOKEN="$GH_TOKEN"
