@@ -2,18 +2,8 @@
     to_remove = ["licecap"]
     [packages.homebrew.common]
         casks = [
-            "arc",
             "bitwarden",
-            "bruno",
-            "expressvpn",
-            "google-drive",
             "iterm2",
-            "obsidian",
-            "raycast",
-            "slack",
-            "spotify",
-            "visual-studio-code",
-            "zoom",
         ]
         formulae = [
             "chezmoi",         # Dotfile manager
@@ -27,12 +17,24 @@
             "wget",
             "zsh", 
         ]
+    [packages.homebrew.personal_computer]
+        casks = [
+            "arc",
+            "expressvpn",
+            "google-drive",
+            "obsidian",
+            "raycast",
+            "slack",
+            "spotify",
+            "zoom",
+        ]
+        formulae = []
     [packages.homebrew.dev_computer]
-        casks = []
+        casks = [
+            "bruno",
+            "visual-studio-code",
+        ]
         formulae = []
     [packages.homebrew.homelab_member]
         casks    = []
         formulae = ["iperf"]
-    [packages.homebrew.personal_computer]
-        casks = []
-        formulae = []
