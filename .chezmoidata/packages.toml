@@ -1,0 +1,38 @@
+[packages.homebrew]
+    to_remove = ["licecap"]
+    [packages.homebrew.common]
+        casks = [
+            "arc",
+            "bitwarden",
+            "bruno",
+            "expressvpn",
+            "google-drive",
+            "iterm2",
+            "obsidian",
+            "raycast",
+            "slack",
+            "spotify",
+            "visual-studio-code",
+            "zoom",
+        ]
+        formulae = [
+            "chezmoi",         # Dotfile manager
+            "curl",
+            "git",
+            "gron",
+            "jq",
+            "openssl",         # SSL/TLS cryptography
+            "ripgrep",         # Search tool
+            "tree",
+            "wget",
+            "zsh", 
+        ]
+    [packages.homebrew.dev_computer]
+        casks = []
+        formulae = []
+    [packages.homebrew.homelab_member]
+        casks    = []
+        formulae = ["iperf"]
+    [packages.homebrew.personal_computer]
+        casks = []
+        formulae = []
