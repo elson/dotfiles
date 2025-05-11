@@ -5,12 +5,12 @@
 {{- $email := promptStringOnce . "email" "Email address" -}}
 
 [data]
-    dev_computer      = {{ $dev_computer }}
     email             = {{ $email | quote }}
     github_user       = "elson"
+    dev_computer      = {{ $dev_computer }}
     homelab_member    = {{ $homelab_member }}
-    is_ci_workflow    = false # Set true only in CI test
     personal_computer = {{ $personal_computer }}
+    is_ci_workflow    = false # Set true only in CI test
     use_secrets       = {{ $use_secrets }}
     xdgCacheDir       = "{{ .chezmoi.homeDir }}/.cache"
     xdgConfigDir      = "{{ .chezmoi.homeDir }}/.config"
