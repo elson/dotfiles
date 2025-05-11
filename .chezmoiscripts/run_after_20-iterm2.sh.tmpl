@@ -1,14 +1,25 @@
 {{- if eq .chezmoi.os "darwin" -}}
-#!/bin/bash
+#!/usr/bin/env bash
 
-# iterm2
+{{ template "shared_script_utils.bash" . }}
 
-echo "Configuring iterm2..."
-# Specify the preferences directory
-defaults write com.googlecode.iterm2.plist PrefsCustomFolder -string "~/.config/iterm"
-# Tell iTerm2 to use the custom preferences in the directory
-defaults write com.googlecode.iterm2.plist LoadPrefsFromCustomFolder -int 1
-# Tell iTerm2 to save preferences automatically
-defaults write com.googlecode.iterm2.plist "NoSyncNeverRemindPrefsChangesLostForFile_selection" -int 2
+# Grab current setting
+if current=$(defaults read com.googlecode.iterm2 PrefsCustomFolder 2>/dev/null); then
 
-{{ end -}}
+    if [[ ${current} != "{{ .xdgConfigDir }}/applications/iterm2" ]]; then
+
+        # Specify the preferences directory
+        defaults write com.googlecode.iterm2 PrefsCustomFolder -string "{{ .xdgConfigDir }}/applications/iterm2"
+
+        # Tell iTerm2 to use the custom preferences in the directory
+        defaults write com.googlecode.iterm2 LoadPrefsFromCustomFolder -bool true
+
+        # Tell iTerm2 to save preferences automatically
+        defaults write com.googlecode.iterm2.plist "NoSyncNeverRemindPrefsChangesLostForFile_selection" -int 2
+
+        echo "Set shared iTerm2 preferences: {{ .xdgConfigDir }}/applications/iterm2"
+        exit 0
+    fi
+fi
+
+{{- end }}
