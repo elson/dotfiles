@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+
+{{ if eq .chezmoi.os "darwin" }}
+
+if [[ ! $(command -v brew) ]]; then
+    header "🍺  Installing Homebrew"
+    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+fi
+
+if [[ -e "/opt/homebrew/bin/brew" && ! $(command -v brew) ]]; then
+    notice "Adding Homebrew to your PATH"
+    echo 'eval "$(/opt/homebrew/bin/brew shellenv)"' >>/Users/elson/.zprofile
+    eval "$(/opt/homebrew/bin/brew shellenv)"
+fi
+{{ end }}
