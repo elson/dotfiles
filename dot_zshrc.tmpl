@@ -106,7 +106,7 @@ fi
 [ ! -f "{{ .xdgConfigDir }}/shell/private.sh" ] || source "{{ .xdgConfigDir }}/shell/private.sh"
 
 ### mise
-eval "$(mise activate zsh)"
+! command -v mise > /dev/null || eval "$(mise activate zsh)"
 
 # Set personal aliases, overriding those provided by Oh My Zsh libs,
 # plugins, and themes. Aliases can be placed here, though Oh My Zsh
