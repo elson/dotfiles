@@ -1,5 +1,6 @@
 [packages.homebrew]
 to_remove = ["licecap"]
+
 [packages.homebrew.common]
 casks = ["bitwarden", "iterm2"]
 formulae = [
@@ -18,6 +19,7 @@ formulae = [
     "wget",
     "zsh",
 ]
+
 [packages.homebrew.personal_computer]
 casks = [
     "arc",
@@ -30,9 +32,11 @@ casks = [
     "zoom",
 ]
 formulae = []
+
 [packages.homebrew.dev_computer]
 casks = ["bruno", "visual-studio-code"]
 formulae = []
+
 [packages.homebrew.homelab_member]
 casks = []
 formulae = ["iperf"]
