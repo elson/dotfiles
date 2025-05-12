@@ -16,6 +16,7 @@
     xdgConfigDir      = "{{ .chezmoi.homeDir }}/.config"
     xdgDataDir        = "{{ .chezmoi.homeDir }}/.local/share"
     xdgStateDir       = "{{ .chezmoi.homeDir }}/.local/state"
+    xdgScriptsDir     = "{{ .chezmoi.homeDir }}/.local/scripts"
 
 [diff]
     {{ if lookPath "delta" -}}command = "delta"
