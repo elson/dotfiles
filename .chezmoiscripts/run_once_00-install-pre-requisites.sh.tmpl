@@ -2,6 +2,9 @@
 
 {{ if eq .chezmoi.os "darwin" }}
 
+# Install XCode Command Line Tools if necessary
+xcode-select --install || echo "XCode already installed"
+
 if [[ ! $(command -v brew) ]]; then
     echo "🍺  Installing Homebrew"
     /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
