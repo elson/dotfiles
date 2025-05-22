@@ -1,4 +1,8 @@
-### antigen
+
+# ------------------------------- ANTIGEN ---------------------------------
+
+### Antigen
+export ADOTDIR="{{ .xdgDataDir }}/antigen"
 [ ! -f "{{ .xdgScriptsDir }}/antigen.zsh" ] || source "{{ .xdgScriptsDir }}/antigen.zsh"
 
 if command -v antigen > /dev/null; then
@@ -9,11 +13,14 @@ if command -v antigen > /dev/null; then
   antigen bundle git
   antigen bundle brew
   antigen bundle common-aliases
-  antigen bundle history-substring-search
-  antigen bundle command-not-found
 
-  # Syntax highlighting bundle.
-  antigen bundle zsh-users/zsh-syntax-highlighting
+  # Third-party plugins.
+  antigen bundle "MichaelAquilina/zsh-you-should-use"
+  # antigen bundle marlonrichert/zsh-autocomplete@main
+
+  # Bundles from the community repo (zsh-users).
+  antigen bundle zsh-users/zsh-autosuggestions
+  antigen bundle zsh-users/zsh-syntax-highlighting # Must be last bundle.
 
   # Load the theme.
   antigen theme robbyrussell
@@ -21,6 +28,31 @@ if command -v antigen > /dev/null; then
   # Tell Antigen that you're done.
   antigen apply
 fi
+
+# --------------------------- PLUGIN SETTINGS -----------------------------
+
+# ZSH Autosuggestions
+ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE='fg=#999'
+ZSH_AUTOSUGGEST_CLEAR_WIDGETS+=(bracketed-paste up-line-or-search down-line-or-search expand-or-complete accept-line push-line-or-edit)
+
+# ZSH Syntax Highlighting
+ZSH_HIGHLIGHT_HIGHLIGHTERS=(main brackets pattern)
+
+
+# bindkey '\e[A' history-beginning-search-backward
+# bindkey '\eOA' history-beginning-search-backward
+# bindkey '\e[B' history-beginning-search-forward
+# bindkey '\eOB' history-beginning-search-forward
+# zle -A {.,}history-incremental-search-forward
+# zle -A {.,}history-incremental-search-backward
+
+# zstyle ':autocomplete:*' widget-style menu-select
+# bindkey -M menuselect '\r' accept-line
+
+# zstyle ':autocomplete:*' list-lines 7
+
+
+# ------------------------------ PROFILE ---------------------------------
 
 ### aliases
 [ ! -f "{{ .xdgConfigDir }}/shell/aliases.sh" ] || source "{{ .xdgConfigDir }}/shell/aliases.sh"
@@ -31,5 +63,11 @@ fi
 ### private
 [ ! -f "{{ .xdgConfigDir }}/shell/private.sh" ] || source "{{ .xdgConfigDir }}/shell/private.sh"
 
+
+# -------------------------------- MISC ----------------------------------
+
 ### mise
 ! command -v mise > /dev/null || eval "$(mise activate zsh)"
+
+### vi mode
+# bindkey -v
