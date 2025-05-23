@@ -1,0 +1,49 @@
+#!/bin/bash
+
+{{ template "shared_script_utils.bash" . }}
+
+# Check if Bitwarden CLI is installed
+if ! command -v bw &> /dev/null; then
+    echo "Bitwarden CLI (bw) not found. Please install it to manage secrets."
+    exit 1
+fi
+
+# Get Bitwarden status output
+BW_STATUS_OUTPUT=$(bw status --raw)
+# Extract the 'status' field
+BW_VAULT_STATUS=$(get_json_value_sed "$BW_STATUS_OUTPUT" "status")
+
+case "$BW_VAULT_STATUS" in
+    "unlocked")
+        echo "Bitwarden vault already unlocked."
+        ;;
+    "locked")
+        echo "Bitwarden vault is locked. Attempting to unlock..."
+        # If locked, we still need to set the session key
+        export BW_SESSION=$(bw unlock --raw)
+        if [ -z "$BW_SESSION" ]; then
+            echo "Failed to unlock Bitwarden vault. Exiting."
+            exit 1
+        fi
+        echo "Bitwarden vault unlocked."
+        ;;
+    "unauthenticated")
+        echo "Bitwarden CLI is unauthenticated. Attempting to log in and unlock..."
+        # This will prompt for your master password after entering the email.
+        export BW_SESSION=$(bw login --raw {{ .email }})
+        if [ -z "$BW_SESSION" ]; then
+            echo "Failed to log in to Bitwarden. Exiting."
+            exit 1
+        fi
+        echo "Bitwarden logged in, vault unlocked."
+        ;;
+    *)
+        echo "Unknown Bitwarden status or parsing error: '$BW_VAULT_STATUS'. Please check your Bitwarden CLI installation and configuration."
+        exit 1
+        ;;
+esac
+
+# Save the session key to a file for future use
+echo "export BW_SESSION=\"$BW_SESSION\"" > {{ .bwSessionFile }}
+
+echo "Bitwarden setup complete for Chezmoi."

@@ -49,3 +49,21 @@ _inArray_() {
     done
     return 1
 }
+
+
+get_json_value_sed() {
+    # DESC:
+    #         Extract the value for a specified key from a JSON string using sed.
+    # ARGS:
+    #         $1 (Required) - JSON string to parse
+    #         $2 (Required) - Key whose value should be extracted
+    # OUTS:
+    #         Prints the value associated with the specified key, or an empty string if the key is not found
+    # USAGE:
+    #         get_json_value_sed '{"foo":"bar"}' "foo"
+    local json_string="$1"
+    local key="$2"
+    # Use sed to find the key, and then extract the value between the quotes
+    # This regex looks for "key":" and then captures everything up to the next unescaped quote.
+    echo "$json_string" | sed -n "s/.*\"$key\":\"\([^\"]*\)\".*/\1/p"
+}
