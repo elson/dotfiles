@@ -11,7 +11,6 @@ formulae = [
 "gpg",
 "gron",
 "jq",
-"mise",          # Dev environment manager
 "openssl",       # SSL/TLS cryptography
 "pygments",      # Syntax highlighter  
 "ripgrep",       # Search tool
@@ -37,7 +36,7 @@ formulae = []
 
 [packages.homebrew.dev_computer]
 casks    = ["bruno", "visual-studio-code"]
-formulae = []
+formulae = ["cdxgen", "mise"]
 
 [packages.homebrew.homelab_member]
 casks    = []
