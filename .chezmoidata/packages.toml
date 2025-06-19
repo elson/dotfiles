@@ -4,39 +4,40 @@ to_remove = ["licecap"]
 [packages.homebrew.common]
 casks = ["bitwarden", "iterm2"]
 formulae = [
-    "bitwarden-cli",
-    "chezmoi",       # Dotfile manager
-    "curl",
-    "git",
-    "gpg",
-    "gron",
-    "jq",
-    "mise",          # Dev environment manager
-    "openssl",       # SSL/TLS cryptography
-    "pygments",      # Syntax highlighter  
-    "ripgrep",       # Search tool
-    "tree",
-    "wget",
-    "zsh",
+"bitwarden-cli",
+"chezmoi",       # Dotfile manager
+"curl",
+"git",
+"gpg",
+"gron",
+"jq",
+"openssl",       # SSL/TLS cryptography
+"pygments",      # Syntax highlighter  
+"ripgrep",       # Search tool
+"tree",
+"wget",
+"zsh",
 ]
 
 [packages.homebrew.personal_computer]
 casks = [
-    "arc",
-    "expressvpn",
-    "google-drive",
-    "obsidian",
-    "raycast",
-    "slack",
-    "spotify",
-    "zoom",
+"arc",
+"expressvpn",
+"google-drive",
+"marta",
+"obsidian",
+"raycast",
+"slack",
+"spotify",
+"xnviewmp",
+"zoom",
 ]
 formulae = []
 
 [packages.homebrew.dev_computer]
-casks = ["bruno", "visual-studio-code"]
-formulae = []
+casks    = ["bruno", "visual-studio-code"]
+formulae = ["cdxgen", "mise"]
 
 [packages.homebrew.homelab_member]
-casks = []
+casks    = []
 formulae = ["iperf"]

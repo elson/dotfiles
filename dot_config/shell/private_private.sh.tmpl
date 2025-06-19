@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # Bitwarden
-export BW_SESSION=$(bw unlock --raw)
+[ ! -f "{{ .bwSessionFile }}" ] || source "{{ .bwSessionFile }}"
 
 ### GitHub
 export GH_TOKEN={{ (bitwardenFields "item" .bitwarden.items.github).token.value }}
