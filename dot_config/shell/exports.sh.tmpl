@@ -10,3 +10,8 @@ if [[ -n $SSH_CONNECTION ]]; then
 else
   export EDITOR='vim'
 fi
+
+### AWS CLI
+export AWS_CONFIG_FILE={{ .xdgConfigDir }}/aws/config
+export AWS_SHARED_CREDENTIALS_FILE={{ .xdgConfigDir }}/aws/credentials
+export AWS_PROFILE=runpod

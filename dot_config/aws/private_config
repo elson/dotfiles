@@ -1,0 +1,4 @@
+[profile runpod]
+output = json
+region = EU-RO-1
+endpoint_url = https://s3api-eu-ro-1.runpod.io
