@@ -1,4 +1,5 @@
 [profile runpod]
 output = json
 region = EU-RO-1
+cli_read_timeout = 7200
 endpoint_url = https://s3api-eu-ro-1.runpod.io
