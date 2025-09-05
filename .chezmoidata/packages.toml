@@ -8,6 +8,7 @@ formulae = [
 "bitwarden-cli",
 "chezmoi",       # Dotfile manager
 "curl",
+"gemini-cli",
 "git",
 "gpg",
 "gron",
