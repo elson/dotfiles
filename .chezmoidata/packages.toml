@@ -12,6 +12,7 @@ formulae = [
 "gpg",
 "gron",
 "jq",
+"lftp",
 "openssl",       # SSL/TLS cryptography
 "pygments",      # Syntax highlighter  
 "ripgrep",       # Search tool
