@@ -11,6 +11,9 @@ else
   export EDITOR='vim'
 fi
 
+### Bitwarden SSH Agent
+export SSH_AUTH_SOCK={{ .chezmoi.homeDir }}/Library/Containers/com.bitwarden.desktop/Data/.bitwarden-ssh-agent.sock
+
 ### AWS CLI
 export AWS_CONFIG_FILE={{ .xdgConfigDir }}/aws/config
 export AWS_SHARED_CREDENTIALS_FILE={{ .xdgConfigDir }}/aws/credentials
