@@ -20,3 +20,13 @@ Host firefly-01
     HostName 192.168.0.23
     User root
     IdentityFile ~/.ssh/keys/personal_pve_firefly_01.pub
+
+Host caddy-01
+    HostName 192.168.0.14
+    User root
+    IdentityFile ~/.ssh/keys/personal_pve_caddy_01.pub
+
+Host stash-01
+    HostName 192.168.0.62
+    User root
+    IdentityFile ~/.ssh/keys/personal_pve_stash.pub
