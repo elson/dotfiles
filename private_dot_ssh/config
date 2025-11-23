@@ -6,12 +6,6 @@ Host *
     IdentitiesOnly yes
     IdentityFile ~/.ssh/keys/personal_generic.pub
 
-Host personal-runpod-01
-    HostName 213.173.110.160
-    User root
-    Port 13567
-    IdentityFile ~/.ssh/keys/personal_runpod_01
-
 Host pve
     HostName 192.168.0.222
     User root
