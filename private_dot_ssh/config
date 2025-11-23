@@ -4,6 +4,7 @@ Host *
     ServerAliveInterval 60
     ServerAliveCountMax 3
     IdentitiesOnly yes
+    IdentityFile ~/.ssh/keys/personal_generic.pub
 
 Host personal-runpod-01
     HostName 213.173.110.160
@@ -14,29 +15,23 @@ Host personal-runpod-01
 Host pve
     HostName 192.168.0.222
     User root
-    IdentityFile ~/.ssh/keys/personal_pve.pub
 
-Host sillytavern-01
+Host sillytavern
     HostName 192.168.0.66 
     User root
-    IdentityFile ~/.ssh/keys/personal_pve_st.pub
 
-Host firefly-01
+Host firefly
     HostName 192.168.0.23
     User root
-    IdentityFile ~/.ssh/keys/personal_pve_firefly_01.pub
 
-Host caddy-01
-    HostName 192.168.0.14
-    User root
-    IdentityFile ~/.ssh/keys/personal_pve_caddy_01.pub
-
-Host stash-01
+Host stash
     HostName 192.168.0.62
     User root
-    IdentityFile ~/.ssh/keys/personal_pve_stash.pub
 
-Host dozzle-01
+Host dozzle
     HostName 192.168.0.91
     User root
-    IdentityFile ~/.ssh/keys/personal_pve_dozzle.pub
+
+Host n8n
+    HostName 192.168.0.7
+    User root
