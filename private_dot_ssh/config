@@ -5,27 +5,22 @@ Host *
     ServerAliveCountMax 3
     IdentitiesOnly yes
     IdentityFile ~/.ssh/keys/personal_generic.pub
+    User root
 
 Host pve
     HostName 192.168.0.222
-    User root
-
+    
 Host sillytavern
     HostName 192.168.0.66 
-    User root
 
 Host firefly
     HostName 192.168.0.23
-    User root
 
 Host stash
     HostName 192.168.0.62
-    User root
 
 Host dozzle
     HostName 192.168.0.91
-    User root
 
 Host n8n
     HostName 192.168.0.7
-    User root
