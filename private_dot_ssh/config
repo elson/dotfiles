@@ -24,3 +24,12 @@ Host dozzle
 
 Host n8n
     HostName 192.168.0.7
+
+Host picard
+    HostName 192.168.0.205
+
+Host crusher
+    HostName 192.168.0.92
+
+Host riker
+    HostName 192.168.0.107
