@@ -38,7 +38,7 @@ casks = [
 formulae = []
 
 [packages.homebrew.dev_computer]
-casks    = ["bruno", "visual-studio-code"]
+casks    = ["bruno", "visual-studio-code", "terraform", "tflint", "ansible"]
 formulae = ["cdxgen", "mise"]
 
 [packages.homebrew.homelab_member]
