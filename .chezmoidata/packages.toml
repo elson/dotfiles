@@ -40,7 +40,3 @@ formulae = []
 [packages.homebrew.dev_computer]
 casks    = ["bruno", "visual-studio-code"]
 formulae = ["mise", "terraform", "tflint", "ansible"]
-
-[packages.homebrew.homelab_member]
-casks    = []
-formulae = ["iperf"]
