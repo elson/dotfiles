@@ -2,7 +2,7 @@
 to_remove = ["licecap"]
 
 [packages.homebrew.common]
-casks = ["bitwarden", "iterm2"]
+casks = ["bitwarden", "ghostty"]
 formulae = [
 "awscli",
 "bitwarden-cli",
@@ -10,6 +10,7 @@ formulae = [
 "curl",
 "gemini-cli",
 "git",
+"glow",          # Markdown reader
 "gpg",
 "gron",
 "jq",
@@ -24,8 +25,8 @@ formulae = [
 
 [packages.homebrew.personal_computer]
 casks = [
-"arc",
-"expressvpn",
+"zen",
+"protonvpn",
 "google-drive",
 "marta",
 "obsidian",
