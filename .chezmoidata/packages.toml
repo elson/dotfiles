@@ -33,6 +33,7 @@ casks = [
 "raycast",
 "slack",
 "spotify",
+"syncthing-app",
 "xnviewmp",
 "zoom",
 ]
