@@ -9,30 +9,9 @@ Host *
 
 Host pve
     HostName 192.168.0.222
-    
-Host sillytavern
-    HostName 192.168.0.66 
-
-Host firefly
-    HostName 192.168.0.23
-
-Host stash
-    HostName 192.168.0.62
-
-Host dozzle
-    HostName 192.168.0.91
-
-Host n8n
-    HostName 192.168.0.7
 
 Host picard
     HostName 192.168.0.205
-
-Host crusher
-    HostName 192.168.0.92
-
-Host riker
-    HostName 192.168.0.107
 
 Host laforge
     HostName 192.168.0.10
@@ -42,3 +21,6 @@ Host wesley
 
 Host worf
     HostName 192.168.0.12
+
+Host crusher
+    HostName 192.168.0.13
