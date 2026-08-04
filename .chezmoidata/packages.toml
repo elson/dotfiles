@@ -41,4 +41,4 @@ formulae = []
 
 [packages.homebrew.dev_computer]
 casks    = ["bruno", "visual-studio-code"]
-formulae = ["mise", "terraform", "tflint", "ansible"]
+formulae = ["mise", "hashicorp/tap/terraform", "tflint", "ansible"]
