@@ -1,0 +1,49 @@
+{{- $id := dig "id" "" .chezmoi.osRelease -}}
+{{- $idLike := dig "idLike" "" .chezmoi.osRelease -}}
+{{- if and (eq .chezmoi.os "linux") (or (eq $id "debian") (contains "debian" $idLike)) -}}
+#!/usr/bin/env bash
+
+set -eo pipefail
+
+export DEBIAN_FRONTEND=noninteractive
+
+if [[ $(id -u) -eq 0 ]]; then
+    SUDO=""
+else
+    SUDO="sudo"
+fi
+
+packages=(
+    {{ range $package := .packages.apt.common.packages }}
+    "{{ $package }}"
+    {{ end }}
+
+    {{ if .dev_computer }}
+    {{ range $package := .packages.apt.dev_computer.packages }}
+    "{{ $package }}"
+    {{ end }}
+    {{ end }}
+
+    {{ if .personal_computer }}
+    {{ range $package := .packages.apt.personal_computer.packages }}
+    "{{ $package }}"
+    {{ end }}
+    {{ end }}
+)
+
+# Only touch apt when something is actually missing, so a no-op apply stays fast
+missing=()
+for package in "${packages[@]}"; do
+    if ! dpkg-query -W -f='${Status}' "${package}" 2>/dev/null | grep -q "^install ok installed$"; then
+        missing+=("${package}")
+    fi
+done
+
+if [[ ${#missing[@]} -gt 0 ]]; then
+    echo "Install apt packages: ${missing[*]}"
+    ${SUDO} apt-get update
+    ${SUDO} apt-get install -y "${missing[@]}"
+    echo "apt packages installed"
+fi
+
+{{- end }}

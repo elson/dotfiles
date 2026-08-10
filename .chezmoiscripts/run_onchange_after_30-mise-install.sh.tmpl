@@ -1,4 +1,4 @@
-{{- if and (eq .chezmoi.os "darwin") (.dev_computer) -}}
+{{- if and .dev_computer (lookPath "mise") -}}
 #!/usr/bin/env bash
 
 # hash of the mise config file, used to determine if we need to rerun this script

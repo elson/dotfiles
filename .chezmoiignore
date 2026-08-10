@@ -1,3 +1,9 @@
 README.md
+CLAUDE.md
 symlinks
 .oh-my-zsh/cache/
+
+{{ if not .use_secrets }}
+.config/aws/credentials
+.config/shell/private.sh
+{{ end }}

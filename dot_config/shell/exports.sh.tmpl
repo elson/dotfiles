@@ -15,7 +15,12 @@ else
 fi
 
 ### Bitwarden SSH Agent
+{{ if eq .chezmoi.os "darwin" -}}
 export SSH_AUTH_SOCK={{ .chezmoi.homeDir }}/Library/Containers/com.bitwarden.desktop/Data/.bitwarden-ssh-agent.sock
+{{- else -}}
+# The Bitwarden desktop app is macOS-only here; fall back to whatever agent the
+# session already provides (gnome-keyring, ssh-agent, forwarded agent, ...).
+{{- end }}
 
 ### AWS CLI
 export AWS_CONFIG_FILE={{ .xdgConfigDir }}/aws/config

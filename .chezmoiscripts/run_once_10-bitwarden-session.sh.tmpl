@@ -1,3 +1,4 @@
+{{- if .use_secrets -}}
 #!/bin/bash
 
 {{ template "shared_script_utils.bash" . }}
@@ -47,3 +48,4 @@ esac
 echo "export BW_SESSION=\"$BW_SESSION\"" > {{ .bwSessionFile }}
 
 echo "Bitwarden setup complete for Chezmoi."
+{{- end }}

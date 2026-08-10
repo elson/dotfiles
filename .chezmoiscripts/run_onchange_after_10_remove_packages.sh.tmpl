@@ -1,15 +1,31 @@
+{{- $id := dig "id" "" .chezmoi.osRelease -}}
+{{- $idLike := dig "idLike" "" .chezmoi.osRelease -}}
+{{- $debian := and (eq .chezmoi.os "linux") (or (eq $id "debian") (contains "debian" $idLike)) -}}
 #!/usr/bin/env bash
 
 echo "Checking for packages to remove"
-
-did_remove_package=false
 
 {{ if and (eq .chezmoi.os "darwin") (lookPath "brew") }}
 
     {{ range $package := .packages.homebrew.to_remove }}
     if brew list | grep "{{ $package }}" &> /dev/null; then
-        did_remove_package=true
         brew uninstall "{{ $package }}"
+    fi
+
+    {{ end }}
+{{ end }}
+
+{{ if and $debian (lookPath "apt-get") }}
+
+if [[ $(id -u) -eq 0 ]]; then
+    SUDO=""
+else
+    SUDO="sudo"
+fi
+
+    {{ range $package := .packages.apt.to_remove }}
+    if dpkg-query -W -f='${Status}' "{{ $package }}" 2>/dev/null | grep -q "^install ok installed$"; then
+        DEBIAN_FRONTEND=noninteractive ${SUDO} apt-get remove -y "{{ $package }}"
     fi
 
     {{ end }}

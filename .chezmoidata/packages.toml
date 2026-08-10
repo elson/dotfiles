@@ -42,3 +42,38 @@ formulae = []
 [packages.homebrew.dev_computer]
 casks    = ["bruno", "visual-studio-code"]
 formulae = ["mise", "hashicorp/tap/terraform", "tflint", "ansible"]
+
+# ---------------------------------------------------------------------------
+# apt (Debian / Ubuntu / Proxmox)
+#
+# Only packages that exist in the Debian archive under these names belong here.
+# Deliberately absent, with no apt equivalent — install these by other means on
+# Linux if a box needs them: bitwarden-cli (npm/snap), chezmoi (install script),
+# glow, gron, gemini-cli, mise, terraform, tflint (vendor apt repos), awscli
+# (the Debian package lags badly; use the official installer).
+# ---------------------------------------------------------------------------
+
+[packages.apt]
+to_remove = []
+
+[packages.apt.common]
+packages = [
+"curl",
+"git",
+"gnupg",           # gpg on darwin
+"jq",
+"lftp",
+"openssl",         # SSL/TLS cryptography
+"python3-pygments", # pygments on darwin
+"ripgrep",         # Search tool
+"tree",
+"wget",
+"zsh",
+]
+
+[packages.apt.dev_computer]
+packages = ["ansible"]
+
+# Linux boxes here are headless homelab members; GUI apps are darwin-only.
+[packages.apt.personal_computer]
+packages = []

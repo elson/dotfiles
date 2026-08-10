@@ -13,7 +13,7 @@ fi
 
 if [[ -e "/opt/homebrew/bin/brew" && ! $(command -v brew) ]]; then
     echo "Adding Homebrew to your PATH"
-    echo 'eval "$(/opt/homebrew/bin/brew shellenv)"' >>/Users/elson/.zprofile
+    echo 'eval "$(/opt/homebrew/bin/brew shellenv)"' >>{{ .chezmoi.homeDir }}/.zprofile
     eval "$(/opt/homebrew/bin/brew shellenv)"
 fi
 
@@ -22,5 +22,38 @@ if [[ ! $(command -v bw) ]]; then
     echo "🔑  Installing Bitwarden CLI"
     brew install bitwarden-cli
 fi
+
+{{ end }}
+
+{{ $id := dig "id" "" .chezmoi.osRelease }}
+{{ $idLike := dig "idLike" "" .chezmoi.osRelease }}
+{{ if and (eq .chezmoi.os "linux") (or (eq $id "debian") (contains "debian" $idLike)) }}
+
+export DEBIAN_FRONTEND=noninteractive
+
+if [[ $(id -u) -eq 0 ]]; then
+    SUDO=""
+else
+    SUDO="sudo"
+fi
+
+# Bootstrap the tools the later scripts and templates assume exist
+for package in curl git gnupg; do
+    if ! dpkg-query -W -f='${Status}' "${package}" 2>/dev/null | grep -q "^install ok installed$"; then
+        ${SUDO} apt-get update
+        ${SUDO} apt-get install -y curl git gnupg
+        break
+    fi
+done
+
+{{ if .use_secrets }}
+# There is no bitwarden-cli in the Debian archive
+if [[ ! $(command -v bw) ]]; then
+    echo "🔑  Bitwarden CLI (bw) not found."
+    echo "    Install it manually (npm i -g @bitwarden/cli, snap, or the release"
+    echo "    zip from https://bitwarden.com/download/), or re-run chezmoi init"
+    echo "    with use_secrets=false to skip secret-backed files."
+fi
+{{ end }}
 
 {{ end }}
