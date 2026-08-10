@@ -51,7 +51,7 @@ Secrets are never stored here. Templates pull them at apply time with chezmoi's 
 2. `run_once_10-bitwarden-session` — unlock vault, persist session
 3. `run_onchange_before_10-homebrew-packages` — installs formulae/casks for the enabled machine classes; skips casks when `is_ci_workflow`
 4. (files applied)
-5. `run_onchange_after_10_remove_packages`, `run_onchange_after_30-mise-install` (dev machines only), `run_after_20-iterm2`
+5. `run_onchange_after_10_remove_packages`, `run_onchange_after_30-mise-install` (dev machines only)
 
 Shared bash helpers (`_inArray_`, `get_json_value_sed`) live in `.chezmoitemplates/shared_script_utils.bash` and are pulled in with `{{ template "shared_script_utils.bash" . }}` — that's the only way to share code between scripts.
 
@@ -60,6 +60,5 @@ Shared bash helpers (`_inArray_`, `get_json_value_sed`) live in `.chezmoitemplat
 ## Other structure
 
 - `.chezmoiexternal.toml` — downloads antigen.zsh into `~/.local/scripts/`; `dot_zshrc.tmpl` sources it and defines the zsh plugin set.
-- `.assets/iterm2/` — iTerm2 plist; `dot_config/applications/symlink_iterm2.tmpl` symlinks it into `~/.config/applications/iterm2` and `run_after_20-iterm2` points iTerm2's `PrefsCustomFolder` there.
 - `dot_config/shell/{aliases,exports}.sh.tmpl` — sourced by `.zshrc`; `exports.sh.tmpl` sets `SSH_AUTH_SOCK` to the Bitwarden desktop SSH agent and points AWS at `~/.config/aws`.
 - `private_dot_ssh/config` — homelab hosts (Star Trek names → LAN IPs); public keys only in `private_keys/`.
