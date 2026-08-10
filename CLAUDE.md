@@ -62,3 +62,4 @@ Shared bash helpers (`_inArray_`, `get_json_value_sed`) live in `.chezmoitemplat
 - `.chezmoiexternal.toml` — downloads antigen.zsh into `~/.local/scripts/`; `dot_zshrc.tmpl` sources it and defines the zsh plugin set.
 - `dot_config/shell/{aliases,exports}.sh.tmpl` — sourced by `.zshrc`; `exports.sh.tmpl` sets `SSH_AUTH_SOCK` to the Bitwarden desktop SSH agent and points AWS at `~/.config/aws`.
 - `private_dot_ssh/config` — homelab hosts (Star Trek names → LAN IPs); public keys only in `private_keys/`.
+- `dot_agents/skills/` — agent skills, stored as real files and applied to `~/.agents/skills`. This is the single source of truth: `dot_claude/symlink_skills.tmpl` points `~/.claude/skills` at it, so Claude Code sees the same set. Add a skill under `dot_agents/skills/`, not under `~/.claude/skills`.
