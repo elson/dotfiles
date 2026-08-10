@@ -33,13 +33,11 @@ Source filenames encode target attributes; renaming changes behaviour:
 
 ## Template data model
 
-`.chezmoi.toml.tmpl` is the config template: on first `chezmoi init` it prompts (via `promptBoolOnce`/`promptStringOnce`) for `use_secrets`, `personal_computer`, `homelab_member`, `dev_computer`, `email`, and writes them into `[data]`. Those four booleans are the machine-class switches that gate almost everything else — package sets, mise install, secret rendering. Also defined there: XDG path vars (`.xdgConfigDir`, `.xdgDataDir`, `.xdgScriptsDir`, …) that templates use instead of hardcoding paths, and `.bwSessionFile`.
+`.chezmoi.toml.tmpl` is the config template: on first `chezmoi init` it prompts (via `promptBoolOnce`/`promptStringOnce`) for `use_secrets`, `personal_computer`, `dev_computer`, `email`, and writes them into `[data]`. Those three booleans are the machine-class switches that gate almost everything else — package sets, mise install, secret rendering. Also defined there: XDG path vars (`.xdgConfigDir`, `.xdgDataDir`, `.xdgScriptsDir`, …) that templates use instead of hardcoding paths, and `.bwSessionFile`.
 
 Static data lives in `.chezmoidata/`, auto-merged into the template namespace:
-- `packages.toml` → `.packages.homebrew.{common,dev_computer,personal_computer,homelab_member}.{formulae,casks}` plus `to_remove`
+- `packages.toml` → `.packages.homebrew.{common,dev_computer,personal_computer}.{formulae,casks}` plus `to_remove`
 - `bitwarden.toml` → `.bitwarden.items.<name>` = Bitwarden item UUIDs
-
-Note: the homebrew script iterates `.packages.homebrew.homelab_member.*`, but that table is not defined in `packages.toml`. It only renders on a machine where `homelab_member = true`, so add the table before enabling that flag.
 
 ## Secrets: Bitwarden
 

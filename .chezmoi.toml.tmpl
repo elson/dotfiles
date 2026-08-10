@@ -1,6 +1,5 @@
 {{- $use_secrets := promptBoolOnce . "use_secrets" "Use secrets from Bitwarden? (true/false)" -}}
 {{- $personal_computer := promptBoolOnce . "personal_computer" "Is this a personal computer for daily driving? (true/false)" -}}
-{{- $homelab_member := promptBoolOnce . "homelab_member" "Is this computer in the homelab? (true/false)" -}}
 {{- $dev_computer := promptBoolOnce . "dev_computer" "Do you do development on this computer? (true/false)" -}}
 {{- $email := promptStringOnce . "email" "Email address" -}}
 
@@ -8,7 +7,6 @@
     email             = {{ $email | quote }}
     github_user       = "elson"
     dev_computer      = {{ $dev_computer }}
-    homelab_member    = {{ $homelab_member }}
     personal_computer = {{ $personal_computer }}
     is_ci_workflow    = false # Set true only in CI test
     use_secrets       = {{ $use_secrets }}

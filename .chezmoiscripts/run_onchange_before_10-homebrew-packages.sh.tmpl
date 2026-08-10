@@ -18,12 +18,6 @@ formulae=(
     {{ end }}
     {{ end }}
 
-    {{ if .homelab_member }}
-    {{ range $package := .packages.homebrew.homelab_member.formulae }}
-    "{{ $package }}"
-    {{ end }}
-    {{ end }}
-
     {{ if .personal_computer }}
     {{ range $package := .packages.homebrew.personal_computer.formulae }}
     "{{ $package }}"
@@ -38,12 +32,6 @@ casks=(
 
     {{ if .dev_computer }}
     {{ range $package := .packages.homebrew.dev_computer.casks }}
-    "{{ $package }}"
-    {{ end }}
-    {{ end }}
-
-    {{ if .homelab_member }}
-    {{ range $package := .packages.homebrew.homelab_member.casks }}
     "{{ $package }}"
     {{ end }}
     {{ end }}
