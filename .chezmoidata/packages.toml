@@ -1,6 +1,9 @@
 [packages.homebrew]
-to_remove = ["licecap", "glow", "gemini-cli", "lftp"]
+to_remove = ["licecap", "glow", "gemini-cli", "lftp", "bitwarden-cli"]
 
+# bitwarden-cli is in to_remove, not just absent: rbw replaced it everywhere,
+# and `bw` left on PATH is a second, stateless client competing for the vault.
+#
 # Not managed here on purpose:
 #   awscli  - not installed on either OS; use the official installer on the boxes
 #             that need it (the ~/.config/aws profiles stay either way)
@@ -12,7 +15,6 @@ to_remove = ["licecap", "glow", "gemini-cli", "lftp"]
 [packages.homebrew.common]
 casks = ["bitwarden", "ghostty"]
 formulae = [
-"bitwarden-cli", # superseded by rbw here; kept until other projects migrate off it
 "curl",
 "git",           # Markdown reader
 "gpg",
