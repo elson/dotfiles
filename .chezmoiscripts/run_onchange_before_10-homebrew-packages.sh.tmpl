@@ -52,14 +52,22 @@ brew update
 
 BREW_DIR="$(brew --prefix)/bin/"
 
+# Collected rather than fatal: one unavailable cask should not stop the rest of
+# the apply. Reported at the end so failures do not vanish up the scrollback.
+failed=()
+
 for formula in ${formulae[@]}; do
-    if ! _inArray_ -i "${formula}" "${currently_installed_formulae[@]}"; then
-        if [[ ! -e "${BREW_DIR}/${formula}" ]]; then
-            brew install -q --formula ${formula}
+    # brew list reports the bare name, so a tapped formula must be compared on
+    # its basename: hashicorp/tap/terraform -> terraform
+    formula_name="${formula##*/}"
+
+    if ! _inArray_ -i "${formula_name}" "${currently_installed_formulae[@]}"; then
+        if [[ ! -e "${BREW_DIR}/${formula_name}" ]]; then
+            brew install -q --formula ${formula} || failed+=("formula:${formula}")
         fi
 
         # https://github.com/microsoft/Git-Credential-Manager-for-Mac-and-Linux/blob/master/Install.md
-        if [[ ${formula} == "git-credential-manager" ]]; then
+        if [[ ${formula_name} == "git-credential-manager" ]]; then
             git-credential-manager install
         fi
 
@@ -69,12 +77,23 @@ done
 {{ if not .is_ci_workflow }}
 for cask in ${casks[@]}; do
     if ! _inArray_ -i "${cask}" "${currently_installed_casks[@]}"; then
-        brew install -q --cask ${cask}
+        # --adopt takes over an app that was installed by hand instead of
+        # failing on it. Safe for the self-updating casks that make up almost
+        # all of this list: brew skips the version comparison when a cask
+        # declares auto_updates, and never upgrades it afterwards without
+        # --greedy. A cask without auto_updates whose on-disk copy has drifted
+        # still fails loudly rather than being overwritten.
+        brew install -q --cask --adopt ${cask} || failed+=("cask:${cask}")
     fi
 
 done
 {{ end }}
 
-echo "Homebrew packages installed"
+if [[ ${#failed[@]} -gt 0 ]]; then
+    echo "⚠️  Homebrew packages installed, with ${#failed[@]} failure(s):"
+    printf '      %s\n' "${failed[@]}"
+else
+    echo "Homebrew packages installed"
+fi
 
 {{- end }}
