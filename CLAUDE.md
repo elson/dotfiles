@@ -16,7 +16,7 @@ chezmoi execute-template < dot_config/git/config.tmpl   # render one template to
 chezmoi data                  # dump the template data available to all templates
 chezmoi cd                    # shell into this directory
 chezmoi state delete-bucket --bucket=scriptState        # force run_once_/run_onchange_ scripts to rerun
-reload                        # alias: bw sync && chezmoi apply && exec zsh
+reload                        # alias: rbw sync && chezmoi apply && exec zsh
 ```
 
 There are no builds, linters, or tests. Verification is `chezmoi diff` / `chezmoi execute-template`.
@@ -33,40 +33,43 @@ Source filenames encode target attributes; renaming changes behaviour:
 
 ## Template data model
 
-`.chezmoi.toml.tmpl` is the config template: on first `chezmoi init` it prompts (via `promptBoolOnce`/`promptStringOnce`) for `use_secrets`, `personal_computer`, `dev_computer`, `email`, and writes them into `[data]`. Those three booleans are the machine-class switches that gate almost everything else — package sets, mise install, secret rendering. Also defined there: XDG path vars (`.xdgConfigDir`, `.xdgDataDir`, `.xdgScriptsDir`, …) that templates use instead of hardcoding paths, and `.bwSessionFile`.
+`.chezmoi.toml.tmpl` is the config template: on first `chezmoi init` it prompts (via `promptBoolOnce`/`promptStringOnce`) for `use_secrets`, `personal_computer`, `dev_computer`, `email`, and writes them into `[data]`. Those three booleans are the machine-class switches that gate almost everything else — package sets, mise install, secret rendering. Also defined there: XDG path vars (`.xdgConfigDir`, `.xdgDataDir`, `.xdgScriptsDir`, …) that templates use instead of hardcoding paths.
 
 Static data lives in `.chezmoidata/`, auto-merged into the template namespace:
 - `packages.toml` → `.packages.homebrew.{common,dev_computer,personal_computer}.{formulae,casks}` (darwin) and `.packages.apt.{common,dev_computer,personal_computer}.packages` (Debian-likes), each plus `to_remove`
-- `packages.yaml` → `.versions.<tool>` = pinned versions for the tools installed from a release download (`gron`, `tflint`, `bitwarden_cli`). Nothing else belongs here: apt owns upgrades for repo-backed packages, and `claude` self-updates.
+- `packages.yaml` → `.versions.<tool>` = pinned versions for the tools installed from a release download (`gron`, `tflint`, `rbw`). Nothing else belongs here: apt owns upgrades for repo-backed packages, and `claude` self-updates.
 - `bitwarden.toml` → `.bitwarden.items.<name>` = Bitwarden item UUIDs
 
 ## Secrets: Bitwarden
 
-Secrets are never stored here. Templates pull them at apply time with chezmoi's `bitwardenFields` function keyed by the UUIDs in `.chezmoidata/bitwarden.toml`, e.g. `dot_config/shell/private_private.sh.tmpl` (GitHub tokens) and `dot_config/aws/private_credentials.tmpl` (S3 keys for the `runpod` profile). Adding a secret = add the item UUID to `bitwarden.toml`, then reference `(bitwardenFields "item" .bitwarden.items.<name>).<field>.value`.
+Secrets are never stored here. Templates pull them at apply time with chezmoi's `rbwFields` function keyed by the UUIDs in `.chezmoidata/bitwarden.toml`, e.g. `dot_config/shell/private_private.sh.tmpl` (GitHub tokens) and `dot_config/aws/private_credentials.tmpl` (S3 keys for the `runpod` profile). Adding a secret = add the item UUID to `bitwarden.toml`, then reference `(rbwFields .bitwarden.items.<name>).<field>.value`.
 
-`run_once_10-bitwarden-session.sh.tmpl` logs in/unlocks `bw` and writes `export BW_SESSION=…` to `~/.zshrc_bitwarden_session`, which the private shell file sources. Applying with a locked vault will prompt or fail — run `bw unlock` first.
+The client is [`rbw`](https://github.com/doy/rbw), not the official `bw`. `rbwFields` shells out to `rbw get --raw <needle>`, and a needle can be a name, URI *or* UUID — which is why the migration off `bw` needed no change to `bitwarden.toml`.
+
+There is no session file and no `BW_SESSION` plumbing: `rbw-agent` holds the vault key in memory the way `ssh-agent` holds keys. The prerequisites hook unlocks the agent before chezmoi reads the source state, so an apply costs one pinentry prompt no matter how many secrets it renders — `bw` needed one per `bitwardenFields` call, because the session file it wrote was never in chezmoi's environment. The hook also sets `lock_timeout` to 86400 (rbw's default is 3600), so a working day's worth of applies costs one prompt in total.
+
+`rbw-agent` also serves an SSH agent socket in its runtime dir (`$XDG_RUNTIME_DIR/rbw`, or `${TMPDIR}/rbw-<uid>` where the platform has no runtime dir, which is always the case on macOS). `dot_config/shell/exports.sh.tmpl` computes that path at shell startup and points `SSH_AUTH_SOCK` at it *only if the socket exists*, so a shell started before the agent keeps whatever agent the session already had. This replaced the Bitwarden desktop app's socket, which was darwin-only.
 
 ## Script ordering on a fresh machine
 
 Scripts with a `before_`/`after_` prefix run in those phases; a plain `run_once_NN` runs in the file phase, *between* them. Nothing in `.chezmoiscripts/` runs early enough to install a prerequisite that templates or `before_` scripts need — that job belongs to the hook in step 0.
 
-0. **`.install-prerequisites.sh`** — not a script target at all. It is wired to `hooks.read-source-state.pre` in `.chezmoi.toml.tmpl`, so chezmoi runs it *before reading the source state*: earlier than any `run_` script and before any `bitwardenFields` template is rendered. Installs Xcode CLT + Homebrew (darwin), the apt basics (Debian), and `bw` when `use_secrets`. See "The prerequisites hook" below.
+0. **`.install-prerequisites.sh`** — not a script target at all. It is wired to `hooks.read-source-state.pre` in `.chezmoi.toml.tmpl`, so chezmoi runs it *before reading the source state*: earlier than any `run_` script and before any `rbwFields` template is rendered. Installs Xcode CLT + Homebrew (darwin), the apt basics (Debian), and `rbw` when `use_secrets` — then unlocks the rbw agent. See "The prerequisites hook" below.
 1. `run_onchange_before_09-apt-repos` (Debian) — add the mise / HashiCorp / gh / docker / tailscale apt repos
 2. `run_onchange_before_10-homebrew-packages` (darwin) / `run_onchange_before_11-apt-packages` (Debian) — install the enabled machine classes' packages; the darwin one skips casks when `is_ci_workflow`
-3. `run_once_10-bitwarden-session` — unlock vault, persist session (skipped entirely unless `use_secrets`)
-4. (files applied)
-5. `run_onchange_after_10_remove_packages` (both OSes), `run_onchange_after_20-release-tools` + `run_onchange_after_21-bitwarden-cli` (Debian), `run_once_after_22-claude-code` (both), `run_onchange_after_30-mise-install` (dev machines that have `mise`)
+3. (files applied)
+4. `run_onchange_after_10_remove_packages` (both OSes), `run_onchange_after_20-release-tools` + `run_onchange_after_21-rbw` (Debian), `run_once_after_22-claude-code` (both), `run_onchange_after_30-mise-install` (dev machines that have `mise`)
 
 ### The prerequisites hook
 
-`.install-prerequisites.sh` sits at the repo root; the leading dot keeps chezmoi from treating it as a target. It replaced `run_once_00-install-pre-requisites`, which could not work: as a plain `run_once_`, it ran *after* the `before_` package scripts, so on a bare machine Homebrew did not exist when `before_10` wanted it, and `bw` did not exist when the secret templates rendered. That is what made a fresh machine need two applies.
+`.install-prerequisites.sh` sits at the repo root; the leading dot keeps chezmoi from treating it as a target. It replaced `run_once_00-install-pre-requisites`, which could not work: as a plain `run_once_`, it ran *after* the `before_` package scripts, so on a bare machine Homebrew did not exist when `before_10` wanted it, and the Bitwarden client did not exist when the secret templates rendered. That is what made a fresh machine need two applies.
 
 Two rules for anything added to it:
 
 1. **Exit fast when the tool is present.** The hook runs on every command that reads the source state — `apply`, `diff`, `status`, `data`.
 2. **Never exit non-zero.** A failing hook blocks every chezmoi command, including the `chezmoi diff` you would debug it with. Warn to stderr and let the `run_` scripts retry; they all keep their own presence checks for exactly this reason.
 
-It is a plain `sh` script, not a template, so it cannot interpolate chezmoi data. It reads the `bw` pin straight out of `.chezmoidata/packages.yaml` with `sed`, and reads `use_secrets` out of the generated `~/.config/chezmoi/chezmoi.toml` with `grep` — deliberately not `chezmoi data`, which would re-enter the hook.
+It is a plain `sh` script, not a template, so it cannot interpolate chezmoi data. It reads the `rbw` pin straight out of `.chezmoidata/packages.yaml` with `sed`, and reads `use_secrets` out of the generated `~/.config/chezmoi/chezmoi.toml` with `grep` — deliberately not `chezmoi data`, which would re-enter the hook.
 
 Changing the hook stanza means existing machines need `chezmoi init` re-run to regenerate their config; the `promptOnce` values already stored are not re-asked.
 
@@ -74,7 +77,7 @@ Changing the hook stanza means existing machines need `chezmoi init` re-run to r
 
 - **In the Debian archive** → add to the `packages.apt.*` array. Done.
 - **Has an official apt repo** (docker, gh, tailscale, mise, terraform) → add the repo to `run_onchange_before_09-apt-repos` via `add_repo`, then list the package in the apt array like any other. More maintainable than a vendor install script, and apt handles upgrades.
-- **Release download only** (gron, tflint, bw) → pin it in `.chezmoidata/packages.yaml` and install it in a `run_onchange_after_2x` script, into `~/.local/bin` without sudo. The pin is what triggers the re-run.
+- **Release download only** (gron, tflint, rbw) → pin it in `.chezmoidata/packages.yaml` and install it in a `run_onchange_after_2x` script, into `~/.local/bin` without sudo. The pin is what triggers the re-run. `rbw` is the exception that proves the rule: templates need it *before* any script runs, so the hook installs it too, and `after_21-rbw` exists only to move an already-installed box onto a bumped pin.
 - **Self-updating installer** (claude) → `run_once_`, guarded by `command -v`. Nothing to pin.
 
 Keep these groups in separate scripts so an apt failure cannot block a download installer, and vice versa.

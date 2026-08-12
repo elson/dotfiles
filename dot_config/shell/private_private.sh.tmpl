@@ -1,9 +1,6 @@
 #!/usr/bin/env bash
 
-# Bitwarden
-[ ! -f "{{ .bwSessionFile }}" ] || source "{{ .bwSessionFile }}"
-
 ### GitHub
-export GH_TOKEN={{ (bitwardenFields "item" .bitwarden.items.github).classic_token.value }}
+export GH_TOKEN={{ (rbwFields .bitwarden.items.github).classic_token.value }}
 export GITHUB_TOKEN="$GH_TOKEN"
 export GITHUB_PERSONAL_ACCESS_TOKEN="$GH_TOKEN"

@@ -1,0 +1,58 @@
+{{- $id := dig "id" "" .chezmoi.osRelease -}}
+{{- $idLike := dig "idLike" "" .chezmoi.osRelease -}}
+{{- if and .use_secrets (eq .chezmoi.os "linux") (or (eq $id "debian") (contains "debian" $idLike)) -}}
+#!/usr/bin/env bash
+
+# Converge rbw to the pinned version after a bump.
+#   rbw {{ .versions.rbw }}
+#
+# .install-prerequisites.sh already installs rbw on a fresh box — it has to,
+# since rbwFields renders during the file phase. But the hook only acts when rbw
+# is missing entirely, so this script is what moves an existing machine forward
+# when the pin in .chezmoidata/packages.yaml changes.
+#
+# rbw is in Debian forky/sid only, so stable boxes take the upstream tarball.
+
+set -eo pipefail
+
+VERSION="{{ .versions.rbw }}"
+BIN_DIR="{{ .chezmoi.homeDir }}/.local/bin"
+
+# rbw reports "rbw 1.15.0", so no version stamp file is needed here
+if command -v rbw &>/dev/null && [[ $(rbw --version 2>/dev/null) == "rbw ${VERSION}" ]]; then
+    echo "✅  rbw ${VERSION} already installed"
+    exit 0
+fi
+
+if ! command -v curl &>/dev/null; then
+    echo "curl not found — install it (apt) and re-apply" >&2
+    exit 1
+fi
+
+arch="$(dpkg --print-architecture)"
+if [[ ${arch} != "amd64" ]]; then
+    echo "Upstream publishes no rbw build for ${arch}; install it manually" >&2
+    exit 1
+fi
+
+tmp="$(mktemp -d)"
+trap 'rm -rf "${tmp}"' EXIT
+
+echo "⬇️   Installing rbw ${VERSION} (${arch})"
+curl -fsSL --max-time 300 -o "${tmp}/rbw.tar.gz" \
+    "https://github.com/doy/rbw/releases/download/${VERSION}/rbw_${VERSION}_linux_amd64.tar.gz"
+tar -xzf "${tmp}/rbw.tar.gz" -C "${tmp}"
+
+mkdir -p "${BIN_DIR}"
+install -m 0755 "${tmp}/rbw" "${BIN_DIR}/rbw"
+install -m 0755 "${tmp}/rbw-agent" "${BIN_DIR}/rbw-agent"
+
+# The old agent still holds the previous binary's state
+if pgrep -x rbw-agent >/dev/null 2>&1; then
+    echo "Restarting rbw-agent to pick up the new binary"
+    rbw stop-agent || true
+fi
+
+echo "rbw ${VERSION} installed to ${BIN_DIR}/rbw"
+
+{{- end }}

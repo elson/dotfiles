@@ -44,13 +44,15 @@ sh -c "$(curl -fsLS get.chezmoi.io)" -- -b ~/.local/bin init --apply elson
 `PATH` by the shell config this repo installs.
 
 One apply is enough. Prerequisites that everything else depends on — Xcode CLT and
-Homebrew on macOS, `curl`/`git`/`gnupg`/`unzip` on Debian, and the Bitwarden CLI on both —
+Homebrew on macOS, `curl`/`git`/`gnupg`/`unzip` on Debian, and `rbw` on both —
 are installed by [`.install-prerequisites.sh`](.install-prerequisites.sh), which chezmoi
 runs as a `read-source-state.pre` hook *before* it reads this repo. So Homebrew exists by
-the time the package scripts run, and `bw` exists by the time a `bitwardenFields` template
-is rendered.
+the time the package scripts run, and `rbw` exists — and is unlocked — by the time an
+`rbwFields` template is rendered.
 
-You will be prompted for your Bitwarden master password partway through the first apply.
+You will be prompted once for your Bitwarden master password during the first apply. The
+`rbw-agent` holds the key from then on, so the rest of the apply renders without asking
+again.
 
 ### Setup prompts
 
@@ -59,7 +61,7 @@ asked again:
 
 | Prompt | Data key | What it gates |
 |---|---|---|
-| Use secrets from Bitwarden? | `use_secrets` | The Bitwarden unlock script, `~/.config/aws/credentials`, `~/.config/shell/private.sh`, and the `bw` installer on Linux. `false` makes those targets disappear via `.chezmoiignore`. |
+| Use secrets from Bitwarden? | `use_secrets` | `~/.config/aws/credentials`, `~/.config/shell/private.sh`, and the `rbw` install + unlock in the prerequisites hook. `false` makes those targets disappear via `.chezmoiignore`. |
 | Is this a personal computer for daily driving? | `personal_computer` | GUI apps — browsers, Slack, Obsidian, Docker Desktop, Tailscale (darwin only; the Linux boxes are headless). |
 | Do you do development on this computer? | `dev_computer` | mise, terraform, tflint, ansible, gh, Claude Code, and the `mise install` run. |
 | Email address | `email` | Git identity and the Bitwarden login. |
@@ -73,16 +75,15 @@ In execution order, not filename order — the hook runs first, then `before_` s
 the file phase, then `after_` scripts:
 
 0. **`.install-prerequisites.sh`** — Xcode CLT + Homebrew (macOS), `curl`/`git`/`gnupg`/
-   `unzip` (Debian), and the Bitwarden CLI. Runs before chezmoi even reads the repo.
+   `unzip` (Debian), and `rbw`, which it then unlocks. Runs before chezmoi even reads the
+   repo, so the secret templates have a live vault by the time they render.
 1. **`before_09-apt-repos`** *(Debian)* — adds the mise, HashiCorp, GitHub CLI, Docker,
    and Tailscale apt repos, skipping any that don't publish for the box's codename.
 2. **`before_10-homebrew-packages`** *(darwin)* / **`before_11-apt-packages`** *(Debian)* —
    installs the enabled machine classes' packages.
-3. **`10-bitwarden-session`** — logs in and unlocks the vault, writing `BW_SESSION` to
-   `~/.zshrc_bitwarden_session`. Skipped entirely unless `use_secrets`.
-4. **files applied** — templates rendered into `$HOME`.
-5. **`after_10_remove_packages`**, **`after_20-release-tools`** (gron, tflint),
-   **`after_21-bitwarden-cli`**, **`after_22-claude-code`**, **`after_30-mise-install`**.
+3. **files applied** — templates rendered into `$HOME`.
+4. **`after_10_remove_packages`**, **`after_20-release-tools`** (gron, tflint),
+   **`after_21-rbw`**, **`after_22-claude-code`**, **`after_30-mise-install`**.
 
 ## What's managed
 
@@ -106,7 +107,7 @@ failure in one can't block the others:
 |---|---|
 | In the Debian archive / a Homebrew formula | add to the `packages.apt.*` or `packages.homebrew.*` array |
 | Has an official apt repo (docker, gh, tailscale, mise, terraform) | add the repo to `before_09-apt-repos`, then list the package in the apt array — apt then owns upgrades |
-| Release download only (gron, tflint, bw) | pin the version in [`.chezmoidata/packages.yaml`](.chezmoidata/packages.yaml) and install it in an `after_2x` script; bumping the pin is what re-runs it |
+| Release download only (gron, tflint, rbw) | pin the version in [`.chezmoidata/packages.yaml`](.chezmoidata/packages.yaml) and install it in an `after_2x` script; bumping the pin is what re-runs it |
 | Self-updating installer (claude) | `run_once_`, guarded by `command -v` |
 
 Not managed on purpose: **chezmoi** (installed by the bootstrap command above, before this
@@ -121,30 +122,49 @@ chezmoi edit ~/.zshrc        # edit the source file behind a target
 chezmoi status               # what's out of sync
 chezmoi update               # git pull + apply
 chezmoi cd                   # shell into the source directory
-reload                       # alias: bw sync && chezmoi apply && exec zsh
+reload                       # alias: rbw sync && chezmoi apply && exec zsh
 ```
 
 Edit files **here**, never in `$HOME` — `chezmoi apply` overwrites the target.
 
 ## Secrets
 
-No encrypted blobs are committed. Item UUIDs live in
+No encrypted blobs are committed. The client is [`rbw`](https://github.com/doy/rbw), an
+unofficial Bitwarden CLI that keeps the vault key in a background agent instead of making
+you shuttle session tokens around. Item UUIDs live in
 [`.chezmoidata/bitwarden.toml`](.chezmoidata/bitwarden.toml), and templates pull fields at
 apply time:
 
 ```
-{{ (bitwardenFields "item" .bitwarden.items.<name>).<field>.value }}
+{{ (rbwFields .bitwarden.items.<name>).<field>.value }}
 ```
 
 To add a secret: put the item's UUID in `bitwarden.toml`, then reference it from a
-`private_` template. The vault must be unlocked — run `bw unlock` before `chezmoi apply`
-if you hit a prompt mid-apply.
+`private_` template. A needle can be a name, URI or UUID.
+
+The vault must be unlocked, but you rarely have to think about it — the prerequisites hook
+runs `rbw unlock` before every source-state read, and the agent then holds the key for
+`lock_timeout`, which the hook sets to 24 hours. To manage it by hand:
+
+```sh
+rbw unlock          # unlock the agent
+rbw lock            # forget the key now
+rbw sync            # refresh the local vault copy
+rbw config show     # email, lock_timeout, pinentry
+```
+
+### SSH agent
+
+`rbw-agent` serves an SSH agent socket carrying the SSH keys from your vault.
+`exports.sh` points `SSH_AUTH_SOCK` at it automatically — `$XDG_RUNTIME_DIR/rbw/ssh-agent-socket`
+on Linux, `${TMPDIR}/rbw-<uid>/ssh-agent-socket` on macOS — but only once the socket
+exists, so a shell opened before the agent keeps whatever agent it already had. Check with
+`ssh-add -l`.
 
 ## Post-bootstrap
 
 - `gh auth login` on dev machines.
-- macOS: enable the Bitwarden desktop app's SSH agent — `exports.sh` already points
-  `SSH_AUTH_SOCK` at it.
+- `ssh-add -l` in a new shell to confirm the rbw SSH agent is serving your keys.
 - Linux: `sudo tailscale up` to join the tailnet, and `sudo usermod -aG docker "$USER"`
   if you want Docker without sudo.
 
@@ -164,8 +184,18 @@ from the source directory — it should be a sub-second no-op once everything is
 prompt answers are not re-asked.
 
 **`chezmoi diff` prompts for a master password, or fails rendering
-`.config/aws/credentials`.** The vault is locked. Run `bw unlock`, or re-init with
-`use_secrets = false`.
+`.config/aws/credentials`.** The agent has locked (after `lock_timeout`) or was never
+logged in. `rbw unlock` fixes the first, `rbw login` the second; `rbw config show` will
+tell you whether the email is even set. Re-init with `use_secrets = false` to opt out of
+secret-backed files entirely.
+
+**No password prompt appears and rbw just fails.** `rbw` asks via `pinentry`. It is a
+Homebrew dependency on darwin, but Linux boxes need `pinentry-curses` — it is in the apt
+common list, so an apply installs it.
+
+**`ssh-add -l` says "Could not open a connection to your authentication agent".** The
+socket only exists once `rbw-agent` has started, and `exports.sh` only exports
+`SSH_AUTH_SOCK` when it finds one. Run any `rbw` command, then open a new shell.
 
 **A `run_once_`/`run_onchange_` script won't re-run.** chezmoi remembers it. Force it with:
 

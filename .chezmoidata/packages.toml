@@ -12,13 +12,14 @@ to_remove = ["licecap", "glow", "gemini-cli", "lftp"]
 [packages.homebrew.common]
 casks = ["bitwarden", "ghostty"]
 formulae = [
-"bitwarden-cli",
+"bitwarden-cli", # superseded by rbw here; kept until other projects migrate off it
 "curl",
 "git",           # Markdown reader
 "gpg",
 "gron",
 "jq",
 "openssl",       # SSL/TLS cryptography
+"rbw",           # Bitwarden client backing every secret template
 "ripgrep",       # Search tool
 "tree",
 "wget",
@@ -55,8 +56,10 @@ formulae = ["mise", "hashicorp/tap/terraform", "tflint", "ansible", "gh"]
 # they only resolve after that script has run.
 #
 # Tools with no apt package at all are installed from a pinned release by
-# run_onchange_after_20-release-tools (gron, tflint) and
-# run_onchange_after_21-bitwarden-cli (bw); versions live in packages.yaml.
+# run_onchange_after_20-release-tools (gron, tflint); versions live in
+# packages.yaml. rbw is the exception: absent from Debian stable, and needed
+# before chezmoi reads the source state, so .install-prerequisites.sh installs
+# it and run_onchange_after_21-rbw only converges it after a pin bump.
 #
 # Still deliberately absent on Linux: glow (removed on darwin too) and awscli
 # (the Debian package lags badly, and it is no longer managed on darwin either —
@@ -74,8 +77,9 @@ packages = [
 "gnupg",   # gpg on darwin
 "jq",
 "lftp",
-"openssl", # SSL/TLS cryptography
-"ripgrep", # Search tool
+"openssl",         # SSL/TLS cryptography
+"pinentry-curses", # rbw's master password prompt on headless boxes
+"ripgrep",         # Search tool
 "tree",
 "unzip",   # needed by the release-download installers
 "wget",

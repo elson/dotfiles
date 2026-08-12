@@ -14,13 +14,20 @@ else
   export EDITOR='vim'
 fi
 
-### Bitwarden SSH Agent
-{{ if eq .chezmoi.os "darwin" -}}
-export SSH_AUTH_SOCK={{ .chezmoi.homeDir }}/Library/Containers/com.bitwarden.desktop/Data/.bitwarden-ssh-agent.sock
-{{- else -}}
-# The Bitwarden desktop app is macOS-only here; fall back to whatever agent the
-# session already provides (gnome-keyring, ssh-agent, forwarded agent, ...).
-{{- end }}
+### SSH agent — rbw-agent has one built in, holding the keys from the vault
+# Mirrors runtime_dir() in rbw's src/dirs.rs: XDG_RUNTIME_DIR when the platform
+# provides one, otherwise {temp_dir}/{profile}-{uid} — which is what macOS
+# always uses, since it has no runtime dir. Same code path on both OSes.
+if [ -n "${XDG_RUNTIME_DIR:-}" ]; then
+    _rbw_runtime_dir="${XDG_RUNTIME_DIR}/rbw"
+else
+    _rbw_runtime_dir="${TMPDIR:-/tmp}/rbw-$(id -u)"
+fi
+# Only when the socket is really there: a shell started before the agent should
+# keep whatever agent the session provides rather than point ssh at a dead path.
+[ -S "${_rbw_runtime_dir}/ssh-agent-socket" ] &&
+    export SSH_AUTH_SOCK="${_rbw_runtime_dir}/ssh-agent-socket"
+unset _rbw_runtime_dir
 
 ### AWS CLI
 export AWS_CONFIG_FILE={{ .xdgConfigDir }}/aws/config

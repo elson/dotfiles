@@ -10,15 +10,15 @@
     personal_computer = {{ $personal_computer }}
     is_ci_workflow    = false # Set true only in CI test
     use_secrets       = {{ $use_secrets }}
-    bwSessionFile     = "{{ .chezmoi.homeDir }}/.zshrc_bitwarden_session"
     xdgCacheDir       = "{{ .chezmoi.homeDir }}/.cache"
     xdgConfigDir      = "{{ .chezmoi.homeDir }}/.config"
     xdgDataDir        = "{{ .chezmoi.homeDir }}/.local/share"
     xdgStateDir       = "{{ .chezmoi.homeDir }}/.local/state"
     xdgScriptsDir     = "{{ .chezmoi.homeDir }}/.local/scripts"
 
-# Installs Homebrew / apt basics / the Bitwarden CLI before the source state is
-# read — early enough that bitwardenFields templates render on the first apply.
+# Installs Homebrew / apt basics / rbw before the source state is read, and
+# unlocks the rbw agent — early enough that rbwFields templates render on the
+# first apply, from one password prompt rather than one per secret.
 # See .install-prerequisites.sh; it exits fast when everything is already present.
 [hooks.read-source-state.pre]
     command = "{{ .chezmoi.sourceDir }}/.install-prerequisites.sh"

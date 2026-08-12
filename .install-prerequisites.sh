@@ -4,8 +4,9 @@
 # Wired up as hooks.read-source-state.pre in .chezmoi.toml.tmpl, so it runs on
 # every chezmoi command that reads the source state — including the first
 # `chezmoi init --apply` on a bare machine, before any run_ script and before
-# any template calling bitwardenFields is rendered. That is what makes a fresh
-# machine converge in one apply instead of two.
+# any template calling rbwFields is rendered. That is what makes a fresh
+# machine converge in one apply instead of two — and, since it also unlocks the
+# rbw agent, from a single password prompt rather than one per secret.
 #
 # The leading dot keeps chezmoi from managing this file as a target.
 #
@@ -80,53 +81,81 @@ install_debian_prerequisites() {
     fi
 }
 
-install_bitwarden_cli_darwin() {
+install_rbw_darwin() {
     command -v brew >/dev/null 2>&1 || return 1
-    echo "🔑  Installing Bitwarden CLI"
-    brew install -q bitwarden-cli || warn "bitwarden-cli install failed"
+    echo "🔑  Installing rbw"
+    brew install -q rbw || warn "rbw install failed"
 }
 
-install_bitwarden_cli_debian() {
-    # No Debian package. Use the same pin as run_onchange_after_21, read straight
-    # from the data file — this script is not a template, so it cannot interpolate.
-    version="$(sed -n 's/^[[:space:]]*bitwarden_cli:[[:space:]]*"\([^"]*\)".*/\1/p' \
+install_rbw_debian() {
+    # rbw is in Debian forky/sid only, so stable boxes take the upstream
+    # tarball. Same pin as run_onchange_after_21-rbw, read straight from the
+    # data file — this script is not a template, so it cannot interpolate.
+    version="$(sed -n 's/^[[:space:]]*rbw:[[:space:]]*"\([^"]*\)".*/\1/p' \
         "${script_dir}/.chezmoidata/packages.yaml" 2>/dev/null)"
     if [ -z "${version}" ]; then
-        warn "no bitwarden_cli pin in .chezmoidata/packages.yaml"
+        warn "no rbw pin in .chezmoidata/packages.yaml"
         return 1
     fi
 
-    command -v curl >/dev/null 2>&1 && command -v unzip >/dev/null 2>&1 || return 1
+    command -v curl >/dev/null 2>&1 || return 1
 
-    case "$(dpkg --print-architecture 2>/dev/null)" in
-        amd64) asset="bw-linux-${version}.zip" ;;
-        arm64) asset="bw-linux-arm64-${version}.zip" ;;
-        *)
-            warn "no Bitwarden CLI release for this architecture"
-            return 1
-            ;;
-    esac
+    arch="$(dpkg --print-architecture 2>/dev/null)"
+    if [ "${arch}" != "amd64" ]; then
+        warn "upstream publishes no rbw build for ${arch:-this architecture}; install it manually"
+        return 1
+    fi
 
     tmp="$(mktemp -d)" || return 1
-    echo "🔑  Installing Bitwarden CLI ${version}"
-    if curl -fsSL --max-time 300 -o "${tmp}/bw.zip" \
-        "https://github.com/bitwarden/clients/releases/download/cli-v${version}/${asset}" &&
-        unzip -qo "${tmp}/bw.zip" -d "${tmp}"; then
+    echo "🔑  Installing rbw ${version}"
+    # Tarball holds rbw, rbw-agent and completion/ at the top level
+    if curl -fsSL --max-time 300 -o "${tmp}/rbw.tar.gz" \
+        "https://github.com/doy/rbw/releases/download/${version}/rbw_${version}_linux_amd64.tar.gz" &&
+        tar -xzf "${tmp}/rbw.tar.gz" -C "${tmp}"; then
         mkdir -p "${HOME}/.local/bin"
-        install -m 0755 "${tmp}/bw" "${HOME}/.local/bin/bw"
+        install -m 0755 "${tmp}/rbw" "${HOME}/.local/bin/rbw"
+        install -m 0755 "${tmp}/rbw-agent" "${HOME}/.local/bin/rbw-agent"
         PATH="${HOME}/.local/bin:${PATH}"
         export PATH
     else
-        warn "Bitwarden CLI download failed; run_onchange_after_21 will retry"
+        warn "rbw download failed; run_onchange_after_21-rbw will retry"
     fi
     rm -rf "${tmp}"
+}
+
+setup_rbw() {
+    # rbw keeps the vault key in a background agent, so unlocking here means
+    # every rbwFields template in this apply renders from one password prompt.
+    command -v rbw >/dev/null 2>&1 || return 1
+
+    email="$(sed -n 's/^[[:space:]]*email[[:space:]]*=[[:space:]]*"\([^"]*\)".*/\1/p' \
+        "${config_file}" 2>/dev/null)"
+    if [ -n "${email}" ] && ! rbw config show 2>/dev/null | grep -q "\"${email}\""; then
+        # Only when it differs: resetting the email invalidates the local db
+        echo "🔑  Pointing rbw at ${email}"
+        rbw config set email "${email}" || warn "rbw config set email failed"
+    fi
+
+    # 24h, so a working day's worth of applies costs one password prompt.
+    # rbw's own default is 3600. Seconds.
+    if ! rbw config show 2>/dev/null | grep -q '"lock_timeout": 86400'; then
+        echo "🔑  Setting rbw lock_timeout to 24h"
+        rbw config set lock_timeout 86400 || warn "rbw config set lock_timeout failed"
+    fi
+
+    if ! rbw unlocked >/dev/null 2>&1; then
+        # unlock fails on a machine that has never logged in; login registers it
+        rbw unlock >/dev/null 2>&1 || rbw login ||
+            warn "could not unlock rbw; secret-backed files will not render"
+    fi
 }
 
 case "$(uname -s)" in
     Darwin)
         install_darwin_prerequisites || exit 0
-        if [ "${use_secrets}" = true ] && ! command -v bw >/dev/null 2>&1; then
-            install_bitwarden_cli_darwin
+        if [ "${use_secrets}" = true ]; then
+            command -v rbw >/dev/null 2>&1 || install_rbw_darwin
+            setup_rbw
         fi
         ;;
     Linux)
@@ -142,8 +171,9 @@ case "$(uname -s)" in
                     ;;
             esac
         fi
-        if [ "${use_secrets}" = true ] && ! command -v bw >/dev/null 2>&1; then
-            install_bitwarden_cli_debian
+        if [ "${use_secrets}" = true ]; then
+            command -v rbw >/dev/null 2>&1 || install_rbw_debian
+            setup_rbw
         fi
         ;;
     *)
