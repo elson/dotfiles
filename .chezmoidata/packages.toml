@@ -1,22 +1,17 @@
 [packages.homebrew]
-to_remove = ["licecap"]
+to_remove = ["licecap", "glow", "gemini-cli", "lftp"]
 
 [packages.homebrew.common]
 casks = ["bitwarden", "ghostty"]
 formulae = [
-"awscli",
 "bitwarden-cli",
 "chezmoi",       # Dotfile manager
 "curl",
-"gemini-cli",
-"git",
-"glow",          # Markdown reader
+"git",           # Markdown reader
 "gpg",
 "gron",
 "jq",
-"lftp",
 "openssl",       # SSL/TLS cryptography
-"pygments",      # Syntax highlighter  
 "ripgrep",       # Search tool
 "tree",
 "wget",
@@ -41,7 +36,7 @@ formulae = []
 
 [packages.homebrew.dev_computer]
 casks    = ["bruno", "visual-studio-code"]
-formulae = ["mise", "hashicorp/tap/terraform", "tflint", "ansible"]
+formulae = ["mise", "hashicorp/tap/terraform", "tflint", "ansible", "awscli"]
 
 # ---------------------------------------------------------------------------
 # apt (Debian / Ubuntu / Proxmox)
@@ -60,12 +55,11 @@ to_remove = []
 packages = [
 "curl",
 "git",
-"gnupg",           # gpg on darwin
+"gnupg",   # gpg on darwin
 "jq",
 "lftp",
-"openssl",         # SSL/TLS cryptography
-"python3-pygments", # pygments on darwin
-"ripgrep",         # Search tool
+"openssl", # SSL/TLS cryptography
+"ripgrep", # Search tool
 "tree",
 "wget",
 "zsh",
