@@ -1,0 +1,59 @@
+{{- $id := dig "id" "" .chezmoi.osRelease -}}
+{{- $idLike := dig "idLike" "" .chezmoi.osRelease -}}
+{{- if and .use_secrets (eq .chezmoi.os "linux") (or (eq $id "debian") (contains "debian" $idLike)) -}}
+#!/usr/bin/env bash
+
+# Bitwarden CLI — no Debian package, and the npm/snap routes drag in a whole
+# runtime, so install the standalone release binary into ~/.local/bin.
+# Pinned in .chezmoidata/packages.yaml; bumping the pin re-runs this script.
+#   bitwarden-cli {{ .versions.bitwarden_cli }}
+#
+# On a fresh box the read-source-state hook (.install-prerequisites.sh) has
+# already put this exact pinned binary in place, so this script is normally a
+# no-op. It exists to converge an existing machine after a pin bump, which the
+# hook will not do — the hook only installs when bw is missing entirely.
+
+set -eo pipefail
+
+{{ template "shared_script_utils.bash" . }}
+
+VERSION="{{ .versions.bitwarden_cli }}"
+BIN_DIR="{{ .chezmoi.homeDir }}/.local/bin"
+
+# Accept a bw from anywhere on PATH (brew, npm, snap) as long as it matches the pin
+if command -v bw &>/dev/null && [[ $(bw --version 2>/dev/null) == "${VERSION}" ]]; then
+    echo "✅  Bitwarden CLI ${VERSION} already installed"
+    exit 0
+fi
+
+for tool in curl unzip; do
+    if ! command -v "${tool}" &>/dev/null; then
+        echo "${tool} not found — install it (apt) and re-apply" >&2
+        exit 1
+    fi
+done
+
+arch="$(_debArch_)"
+case "${arch}" in
+    amd64) asset="bw-linux-${VERSION}.zip" ;;
+    arm64) asset="bw-linux-arm64-${VERSION}.zip" ;;
+    *)
+        echo "No Bitwarden CLI release for ${arch}; install it manually" >&2
+        exit 1
+        ;;
+esac
+
+tmp="$(mktemp -d)"
+trap 'rm -rf "${tmp}"' EXIT
+
+echo "⬇️   Installing Bitwarden CLI ${VERSION} (${arch})"
+curl -fsSL --max-time 300 -o "${tmp}/bw.zip" \
+    "https://github.com/bitwarden/clients/releases/download/cli-v${VERSION}/${asset}"
+unzip -qo "${tmp}/bw.zip" -d "${tmp}"
+
+mkdir -p "${BIN_DIR}"
+install -m 0755 "${tmp}/bw" "${BIN_DIR}/bw"
+
+echo "Bitwarden CLI installed to ${BIN_DIR}/bw"
+
+{{- end }}

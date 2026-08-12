@@ -37,6 +37,7 @@ Source filenames encode target attributes; renaming changes behaviour:
 
 Static data lives in `.chezmoidata/`, auto-merged into the template namespace:
 - `packages.toml` → `.packages.homebrew.{common,dev_computer,personal_computer}.{formulae,casks}` (darwin) and `.packages.apt.{common,dev_computer,personal_computer}.packages` (Debian-likes), each plus `to_remove`
+- `packages.yaml` → `.versions.<tool>` = pinned versions for the tools installed from a release download (`gron`, `tflint`, `bitwarden_cli`). Nothing else belongs here: apt owns upgrades for repo-backed packages, and `claude` self-updates.
 - `bitwarden.toml` → `.bitwarden.items.<name>` = Bitwarden item UUIDs
 
 ## Secrets: Bitwarden
@@ -47,13 +48,38 @@ Secrets are never stored here. Templates pull them at apply time with chezmoi's 
 
 ## Script ordering on a fresh machine
 
-1. `run_once_00-install-pre-requisites` — darwin: Xcode CLT, Homebrew, `bw`; Debian: `apt-get install curl git gnupg`
-2. `run_once_10-bitwarden-session` — unlock vault, persist session (skipped entirely unless `use_secrets`)
-3. `run_onchange_before_10-homebrew-packages` (darwin) / `run_onchange_before_11-apt-packages` (Debian) — install the enabled machine classes' packages; the darwin one skips casks when `is_ci_workflow`
-4. (files applied)
-5. `run_onchange_after_10_remove_packages` (both OSes), `run_onchange_after_30-mise-install` (dev machines that have `mise`)
+Scripts with a `before_`/`after_` prefix run in those phases; a plain `run_once_NN` runs in the file phase, *between* them. Nothing in `.chezmoiscripts/` runs early enough to install a prerequisite that templates or `before_` scripts need — that job belongs to the hook in step 0.
 
-Shared bash helpers (`_inArray_`, `get_json_value_sed`) live in `.chezmoitemplates/shared_script_utils.bash` and are pulled in with `{{ template "shared_script_utils.bash" . }}` — that's the only way to share code between scripts.
+0. **`.install-prerequisites.sh`** — not a script target at all. It is wired to `hooks.read-source-state.pre` in `.chezmoi.toml.tmpl`, so chezmoi runs it *before reading the source state*: earlier than any `run_` script and before any `bitwardenFields` template is rendered. Installs Xcode CLT + Homebrew (darwin), the apt basics (Debian), and `bw` when `use_secrets`. See "The prerequisites hook" below.
+1. `run_onchange_before_09-apt-repos` (Debian) — add the mise / HashiCorp / gh / docker / tailscale apt repos
+2. `run_onchange_before_10-homebrew-packages` (darwin) / `run_onchange_before_11-apt-packages` (Debian) — install the enabled machine classes' packages; the darwin one skips casks when `is_ci_workflow`
+3. `run_once_10-bitwarden-session` — unlock vault, persist session (skipped entirely unless `use_secrets`)
+4. (files applied)
+5. `run_onchange_after_10_remove_packages` (both OSes), `run_onchange_after_20-release-tools` + `run_onchange_after_21-bitwarden-cli` (Debian), `run_once_after_22-claude-code` (both), `run_onchange_after_30-mise-install` (dev machines that have `mise`)
+
+### The prerequisites hook
+
+`.install-prerequisites.sh` sits at the repo root; the leading dot keeps chezmoi from treating it as a target. It replaced `run_once_00-install-pre-requisites`, which could not work: as a plain `run_once_`, it ran *after* the `before_` package scripts, so on a bare machine Homebrew did not exist when `before_10` wanted it, and `bw` did not exist when the secret templates rendered. That is what made a fresh machine need two applies.
+
+Two rules for anything added to it:
+
+1. **Exit fast when the tool is present.** The hook runs on every command that reads the source state — `apply`, `diff`, `status`, `data`.
+2. **Never exit non-zero.** A failing hook blocks every chezmoi command, including the `chezmoi diff` you would debug it with. Warn to stderr and let the `run_` scripts retry; they all keep their own presence checks for exactly this reason.
+
+It is a plain `sh` script, not a template, so it cannot interpolate chezmoi data. It reads the `bw` pin straight out of `.chezmoidata/packages.yaml` with `sed`, and reads `use_secrets` out of the generated `~/.config/chezmoi/chezmoi.toml` with `grep` — deliberately not `chezmoi data`, which would re-enter the hook.
+
+Changing the hook stanza means existing machines need `chezmoi init` re-run to regenerate their config; the `promptOnce` values already stored are not re-asked.
+
+### Which mechanism for a new tool
+
+- **In the Debian archive** → add to the `packages.apt.*` array. Done.
+- **Has an official apt repo** (docker, gh, tailscale, mise, terraform) → add the repo to `run_onchange_before_09-apt-repos` via `add_repo`, then list the package in the apt array like any other. More maintainable than a vendor install script, and apt handles upgrades.
+- **Release download only** (gron, tflint, bw) → pin it in `.chezmoidata/packages.yaml` and install it in a `run_onchange_after_2x` script, into `~/.local/bin` without sudo. The pin is what triggers the re-run.
+- **Self-updating installer** (claude) → `run_once_`, guarded by `command -v`. Nothing to pin.
+
+Keep these groups in separate scripts so an apt failure cannot block a download installer, and vice versa.
+
+Shared bash helpers (`_inArray_`, `_debArch_`, `_versionStamp_`, `get_json_value_sed`) live in `.chezmoitemplates/shared_script_utils.bash` and are pulled in with `{{ template "shared_script_utils.bash" . }}` — that's the only way to share code between scripts.
 
 `run_onchange_*` scripts rerun when their *rendered* content changes. `30-mise-install` therefore embeds a hash comment (`{{ include "dot_config/mise/config.toml.tmpl" | sha256sum }}`) so editing the mise config retriggers `mise install`. Use the same trick when a script must react to a data file it doesn't otherwise interpolate.
 
@@ -80,7 +106,9 @@ sed -E 's/dig "id" "" \.chezmoi\.osRelease/"debian"/g; s/\(eq \.chezmoi\.os "lin
   .chezmoiscripts/run_onchange_before_11-apt-packages.sh.tmpl | chezmoi execute-template | bash -n
 ```
 
-Package names diverge between the two managers (`gpg`/`gnupg`, `pygments`/`python3-pygments`), and several Homebrew formulae have no apt equivalent — `.chezmoidata/packages.toml` documents which and why. GUI apps stay darwin-only: the Linux boxes are headless.
+Package names diverge between the two managers (`gpg`/`gnupg`, `pygments`/`python3-pygments`), and a few Homebrew formulae have no apt package at all — `.chezmoidata/packages.toml` documents which, and which script installs them instead. GUI apps stay darwin-only: the Linux boxes are headless.
+
+The scripts that need the distro codename or architecture read them from `/etc/os-release` and `dpkg --print-architecture` **at runtime**, not from `.chezmoi.osRelease` at template time. That keeps the rendered content byte-identical on every box, so a `run_onchange_` script re-runs only on a real change (a version bump, a repo edit) rather than because a different machine applied it.
 
 `.chezmoiignore` is itself a template. It drops the secret-backed targets (`.config/aws/credentials`, `.config/shell/private.sh`) when `use_secrets` is false, which is what lets a machine without Bitwarden apply cleanly. It also ignores this file and `README.md`, which would otherwise be applied into `$HOME` as `~/CLAUDE.md`.
 

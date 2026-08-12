@@ -51,6 +51,39 @@ _inArray_() {
 }
 
 
+_debArch_() {
+    # DESC:
+    #         Print the Debian architecture name for this machine (amd64, arm64, …).
+    #         Used by the release-download installers to pick the right asset.
+    # OUTS:
+    #         Prints the architecture, or exits 1 if dpkg is unavailable
+    # USAGE:
+    #         arch="$(_debArch_)"
+    if ! command -v dpkg &>/dev/null; then
+        echo "dpkg not found; cannot determine architecture" >&2
+        return 1
+    fi
+    dpkg --print-architecture
+}
+
+
+_versionStamp_() {
+    # DESC:
+    #         Path to the stamp file recording which pinned version of a tool is
+    #         installed. Lets the release-download installers skip work on a
+    #         re-run without parsing `--version`, which not every tool reports
+    #         usefully (gron built from source just says "dev").
+    # ARGS:
+    #         $1 (Required) - Tool name
+    # OUTS:
+    #         Prints the stamp file path
+    # USAGE:
+    #         stamp="$(_versionStamp_ gron)"
+    #         [[ $(cat "${stamp}" 2>/dev/null) == "${version}" ]] && return 0
+    echo "${XDG_STATE_HOME:-${HOME}/.local/state}/dotfiles/versions/${1}"
+}
+
+
 get_json_value_sed() {
     # DESC:
     #         Extract the value for a specified key from a JSON string using sed.

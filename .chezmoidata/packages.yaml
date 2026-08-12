@@ -1,0 +1,11 @@
+# Pinned versions for tools installed by downloading a release, not by a package
+# manager. The pin is what makes the corresponding run_onchange_ script re-run:
+# bump a version here and the rendered script changes, so chezmoi executes it again.
+#
+# Tools installed from a vendor apt repo (mise, terraform, gh, docker, tailscale)
+# are deliberately absent — apt owns their upgrades. So is claude, which
+# self-updates after its run_once_ installer has placed it.
+versions:
+  gron: "0.7.1"           # .chezmoiscripts/run_onchange_after_20-release-tools
+  tflint: "0.64.0"        # .chezmoiscripts/run_onchange_after_20-release-tools
+  bitwarden_cli: "2026.7.0" # .chezmoiscripts/run_onchange_after_21-bitwarden-cli

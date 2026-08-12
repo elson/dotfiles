@@ -1,0 +1,27 @@
+{{- if .dev_computer -}}
+#!/usr/bin/env bash
+
+# Claude Code, via the official installer on both macOS and Linux — that is what
+# put ~/.local/bin/claude -> ~/.local/share/claude/versions/… in place, and the
+# homebrew `claude` cask is the desktop app, not this CLI.
+#
+# run_once_ rather than run_onchange_: claude updates itself after install, so
+# there is no version to pin and nothing to re-run. Delete the script's entry
+# with `chezmoi state delete-bucket --bucket=scriptState` to force a reinstall.
+
+set -eo pipefail
+
+if command -v claude &>/dev/null; then
+    echo "✅  Claude Code already installed ($(command -v claude))"
+    exit 0
+fi
+
+if ! command -v curl &>/dev/null; then
+    echo "curl not found — install it and re-apply" >&2
+    exit 1
+fi
+
+echo "⬇️   Installing Claude Code"
+curl -fsSL --max-time 300 https://claude.ai/install.sh | bash
+
+{{- end }}

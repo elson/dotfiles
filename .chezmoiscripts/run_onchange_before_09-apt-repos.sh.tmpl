@@ -1,0 +1,124 @@
+{{- $id := dig "id" "" .chezmoi.osRelease -}}
+{{- $idLike := dig "idLike" "" .chezmoi.osRelease -}}
+{{- if and (eq .chezmoi.os "linux") (or (eq $id "debian") (contains "debian" $idLike)) -}}
+#!/usr/bin/env bash
+
+# Vendor apt repos for packages with no Debian archive equivalent. Runs before
+# 11-apt-packages, which installs the packages themselves from the arrays in
+# .chezmoidata/packages.toml. Re-runs whenever this file's rendered content
+# changes — a repo URL or key edit — not on every apply.
+#
+# Distro and architecture are resolved at runtime rather than from
+# .chezmoi.osRelease, so every box renders the same script and run_onchange_ is
+# driven only by real changes.
+
+set -eo pipefail
+
+export DEBIAN_FRONTEND=noninteractive
+
+if [[ $(id -u) -eq 0 ]]; then
+    SUDO=""
+else
+    SUDO="sudo"
+fi
+
+# The read-source-state hook (.install-prerequisites.sh) normally installs these
+# first, but it is deliberately non-fatal — so check rather than assume.
+prereqs=()
+for package in ca-certificates curl gnupg; do
+    if ! dpkg-query -W -f='${Status}' "${package}" 2>/dev/null | grep -q "^install ok installed$"; then
+        prereqs+=("${package}")
+    fi
+done
+if [[ ${#prereqs[@]} -gt 0 ]]; then
+    ${SUDO} apt-get update
+    ${SUDO} apt-get install -y "${prereqs[@]}"
+fi
+
+# shellcheck disable=SC1091
+. /etc/os-release
+
+arch="$(dpkg --print-architecture)"
+codename="${VERSION_CODENAME:-}"
+
+# Vendors publish under debian/ or ubuntu/ only. Proxmox and the other
+# derivatives here report ID=debian, so anything not Ubuntu maps to debian.
+if [[ ${ID:-} == "ubuntu" ]]; then
+    vendor_distro="ubuntu"
+else
+    vendor_distro="debian"
+fi
+
+if [[ -z ${codename} ]]; then
+    echo "No VERSION_CODENAME in /etc/os-release; cannot pin vendor repo suites" >&2
+    exit 1
+fi
+
+${SUDO} install -d -m 0755 /etc/apt/keyrings
+
+changed=0
+
+add_repo() {
+    # DESC: Add a vendor apt repo idempotently, skipping it if the vendor does
+    #       not publish for this box's suite (which would break apt-get update).
+    # ARGS: $1 name  $2 key URL  $3 key format (armored|binary)
+    #       $4 base URL  $5 suite  $6 components
+    local name="$1" key_url="$2" key_format="$3" base="$4" suite="$5" components="$6"
+    local keyring="/etc/apt/keyrings/${name}.gpg"
+    local list="/etc/apt/sources.list.d/${name}.list"
+    local line="deb [arch=${arch} signed-by=${keyring}] ${base} ${suite} ${components}"
+
+    if ! curl -fsI -o /dev/null --max-time 15 "${base}/dists/${suite}/Release"; then
+        echo "⏭  ${name}: no repo for ${vendor_distro}/${suite}, skipping"
+        return 0
+    fi
+
+    if [[ ! -s ${keyring} ]]; then
+        echo "🔑  ${name}: installing signing key"
+        if [[ ${key_format} == "armored" ]]; then
+            curl -fsSL --max-time 30 "${key_url}" | gpg --dearmor | ${SUDO} tee "${keyring}" >/dev/null
+        else
+            curl -fsSL --max-time 30 "${key_url}" | ${SUDO} tee "${keyring}" >/dev/null
+        fi
+        ${SUDO} chmod 0644 "${keyring}"
+        changed=1
+    fi
+
+    if [[ ! -f ${list} ]] || ! grep -qxF "${line}" "${list}"; then
+        echo "📦  ${name}: writing ${list}"
+        echo "${line}" | ${SUDO} tee "${list}" >/dev/null
+        ${SUDO} chmod 0644 "${list}"
+        changed=1
+    fi
+}
+
+# mise — publishes a single "stable" suite for all distros
+add_repo mise \
+    "https://mise.jdx.dev/gpg-key.pub" armored \
+    "https://mise.jdx.dev/deb" stable main
+
+# terraform (and the rest of the HashiCorp tools)
+add_repo hashicorp \
+    "https://apt.releases.hashicorp.com/gpg" armored \
+    "https://apt.releases.hashicorp.com" "${codename}" main
+
+# gh — also a single "stable" suite; key is already dearmored
+add_repo github-cli \
+    "https://cli.github.com/packages/githubcli-archive-keyring.gpg" binary \
+    "https://cli.github.com/packages" stable main
+
+add_repo docker \
+    "https://download.docker.com/linux/${vendor_distro}/gpg" armored \
+    "https://download.docker.com/linux/${vendor_distro}" "${codename}" stable
+
+# tailscale — per-suite key, already dearmored
+add_repo tailscale \
+    "https://pkgs.tailscale.com/stable/${vendor_distro}/${codename}.noarmor.gpg" binary \
+    "https://pkgs.tailscale.com/stable/${vendor_distro}" "${codename}" main
+
+if [[ ${changed} -eq 1 ]]; then
+    echo "Refreshing apt indexes for the new repos"
+    ${SUDO} apt-get update
+fi
+
+{{- end }}

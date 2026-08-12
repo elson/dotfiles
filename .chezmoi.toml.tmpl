@@ -17,6 +17,12 @@
     xdgStateDir       = "{{ .chezmoi.homeDir }}/.local/state"
     xdgScriptsDir     = "{{ .chezmoi.homeDir }}/.local/scripts"
 
+# Installs Homebrew / apt basics / the Bitwarden CLI before the source state is
+# read — early enough that bitwardenFields templates render on the first apply.
+# See .install-prerequisites.sh; it exits fast when everything is already present.
+[hooks.read-source-state.pre]
+    command = "{{ .chezmoi.sourceDir }}/.install-prerequisites.sh"
+
 [diff]
     {{ if lookPath "delta" -}}command = "delta"
     {{ end -}}

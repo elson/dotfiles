@@ -1,11 +1,18 @@
 [packages.homebrew]
 to_remove = ["licecap", "glow", "gemini-cli", "lftp"]
 
+# Not managed here on purpose:
+#   awscli  - not installed on either OS; use the official installer on the boxes
+#             that need it (the ~/.config/aws profiles stay either way)
+#   chezmoi - installed by the bootstrap install script before this repo exists
+#   claude  - installed by run_once_after_22-claude-code on both OSes, because
+#             the official installer is what put ~/.local/bin/claude in place
+#             (the `claude` cask is the desktop app, a different artifact)
+
 [packages.homebrew.common]
 casks = ["bitwarden", "ghostty"]
 formulae = [
 "bitwarden-cli",
-"chezmoi",       # Dotfile manager
 "curl",
 "git",           # Markdown reader
 "gpg",
@@ -22,6 +29,7 @@ formulae = [
 casks = [
 "zen",
 "protonvpn",
+"docker-desktop",
 "google-drive",
 "marta",
 "obsidian",
@@ -29,6 +37,7 @@ casks = [
 "slack",
 "spotify",
 "syncthing-app",
+"tailscale-app",
 "xnviewmp",
 "zoom",
 ]
@@ -36,16 +45,22 @@ formulae = []
 
 [packages.homebrew.dev_computer]
 casks    = ["bruno", "visual-studio-code"]
-formulae = ["mise", "hashicorp/tap/terraform", "tflint", "ansible", "awscli"]
+formulae = ["mise", "hashicorp/tap/terraform", "tflint", "ansible", "gh"]
 
 # ---------------------------------------------------------------------------
 # apt (Debian / Ubuntu / Proxmox)
 #
-# Only packages that exist in the Debian archive under these names belong here.
-# Deliberately absent, with no apt equivalent — install these by other means on
-# Linux if a box needs them: bitwarden-cli (npm/snap), chezmoi (install script),
-# glow, gron, gemini-cli, mise, terraform, tflint (vendor apt repos), awscli
-# (the Debian package lags badly; use the official installer).
+# Packages installable with apt, whether from the Debian archive or from a vendor
+# repo added by run_onchange_before_09-apt-repos. Repo-backed entries are marked;
+# they only resolve after that script has run.
+#
+# Tools with no apt package at all are installed from a pinned release by
+# run_onchange_after_20-release-tools (gron, tflint) and
+# run_onchange_after_21-bitwarden-cli (bw); versions live in packages.yaml.
+#
+# Still deliberately absent on Linux: glow (removed on darwin too) and awscli
+# (the Debian package lags badly, and it is no longer managed on darwin either —
+# see the note at the top of this file).
 # ---------------------------------------------------------------------------
 
 [packages.apt]
@@ -53,6 +68,7 @@ to_remove = []
 
 [packages.apt.common]
 packages = [
+"ca-certificates",
 "curl",
 "git",
 "gnupg",   # gpg on darwin
@@ -61,12 +77,26 @@ packages = [
 "openssl", # SSL/TLS cryptography
 "ripgrep", # Search tool
 "tree",
+"unzip",   # needed by the release-download installers
 "wget",
 "zsh",
+# vendor repo: docker
+"containerd.io",
+"docker-buildx-plugin",
+"docker-ce",
+"docker-ce-cli",
+"docker-compose-plugin",
+# vendor repo: tailscale
+"tailscale",
 ]
 
 [packages.apt.dev_computer]
-packages = ["ansible"]
+packages = [
+"ansible",
+"gh",        # vendor repo: cli.github.com
+"mise",      # vendor repo: mise.jdx.dev
+"terraform", # vendor repo: apt.releases.hashicorp.com
+]
 
 # Linux boxes here are headless homelab members; GUI apps are darwin-only.
 [packages.apt.personal_computer]
