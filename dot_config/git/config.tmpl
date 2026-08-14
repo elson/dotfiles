@@ -4,3 +4,7 @@
 
 [github]
    user = {{ .github_user }}
+{{ if lookPath "gh" -}}
+[credential]
+  helper = !gh auth git-credential
+{{ end -}}
