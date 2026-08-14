@@ -10,6 +10,7 @@
 # Versions come from .chezmoidata/packages.yaml — bumping one changes this
 # script's rendered content, which is what makes chezmoi re-run it.
 #   gron   {{ .versions.gron }}
+#   herdr  {{ .versions.herdr }}
 #   tflint {{ .versions.tflint }}
 
 set -eo pipefail
@@ -78,9 +79,40 @@ install_tflint() {
     _recordVersion_ tflint "${version}"
 }
 
+install_herdr() {
+    local version="{{ .versions.herdr }}"
+    if _stampMatches_ herdr "${version}"; then
+        echo "✅  herdr ${version} already installed"
+        return 0
+    fi
+
+    # herdr names its assets by uname -m, not by the Debian architecture
+    local herdr_arch
+    case "${arch}" in
+        amd64) herdr_arch="x86_64" ;;
+        arm64) herdr_arch="aarch64" ;;
+        *)
+            echo "No herdr release for ${arch}; skipping" >&2
+            return 0
+            ;;
+    esac
+
+    # A bare static binary, not an archive — download straight into place
+    local tmp
+    tmp="$(mktemp -d)"
+    trap 'rm -rf "${tmp}"' RETURN
+
+    echo "⬇️   Installing herdr ${version} (${herdr_arch})"
+    curl -fsSL --max-time 120 -o "${tmp}/herdr" \
+        "https://github.com/herdrdev/herdr/releases/download/v${version}/herdr-linux-${herdr_arch}"
+    install -m 0755 "${tmp}/herdr" "${BIN_DIR}/herdr"
+    _recordVersion_ herdr "${version}"
+}
+
 install_gron
 
 {{ if .dev_computer }}
+install_herdr
 install_tflint
 {{ end }}
 

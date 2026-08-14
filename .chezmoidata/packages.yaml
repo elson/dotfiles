@@ -7,6 +7,7 @@
 # self-updates after its run_once_ installer has placed it.
 versions:
   gron: "0.7.1"    # .chezmoiscripts/run_onchange_after_20-release-tools
+  herdr: "0.8.0"   # .chezmoiscripts/run_onchange_after_20-release-tools
   tflint: "0.64.0" # .chezmoiscripts/run_onchange_after_20-release-tools
   # rbw is absent from Debian stable (forky/sid only), so Linux takes the
   # upstream tarball. Installed by .install-prerequisites.sh rather than a
