@@ -85,7 +85,7 @@ Changing the hook stanza means existing machines need `chezmoi init` re-run to r
 
 Keep these groups in separate scripts so an apt failure cannot block a download installer, and vice versa.
 
-Shared bash helpers (`_inArray_`, `_debArch_`, `_versionStamp_`, `get_json_value_sed`) live in `.chezmoitemplates/shared_script_utils.bash` and are pulled in with `{{ template "shared_script_utils.bash" . }}` — that's the only way to share code between scripts.
+Shared bash helpers (`_inArray_`, `_debArch_`, `_versionStamp_`) live in `.chezmoitemplates/shared_script_utils.bash`, and the apt preamble (`SUDO` plus a locale-safe `apt_get`) in `.chezmoitemplates/debian_apt.bash`. Both are pulled in with `{{ template "<name>" . }}` — that's the only way to share code between scripts. Never write a literal `template` action for a file inside that same file, even in a comment: chezmoi executes it and recurses until it hits the template depth limit.
 
 `run_onchange_*` scripts rerun when their *rendered* content changes. `30-mise-install` therefore embeds a hash comment (`{{ include "dot_config/mise/config.toml.tmpl" | sha256sum }}`) so editing the mise config retriggers `mise install`. Use the same trick when a script must react to a data file it doesn't otherwise interpolate.
 

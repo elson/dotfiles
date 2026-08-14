@@ -1,7 +1,5 @@
 README.md
 CLAUDE.md
-symlinks
-.oh-my-zsh/cache/
 
 {{ if not .use_secrets }}
 .config/aws/credentials

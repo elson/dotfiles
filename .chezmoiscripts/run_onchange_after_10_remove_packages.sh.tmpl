@@ -17,15 +17,11 @@ echo "Checking for packages to remove"
 
 {{ if and $debian (lookPath "apt-get") }}
 
-if [[ $(id -u) -eq 0 ]]; then
-    SUDO=""
-else
-    SUDO="sudo"
-fi
+{{ template "debian_apt.bash" . }}
 
     {{ range $package := .packages.apt.to_remove }}
     if dpkg-query -W -f='${Status}' "{{ $package }}" 2>/dev/null | grep -q "^install ok installed$"; then
-        ${SUDO} env LC_ALL=C LANGUAGE=C DEBIAN_FRONTEND=noninteractive apt-get remove -y "{{ $package }}"
+        apt_get remove -y "{{ $package }}"
     fi
 
     {{ end }}
