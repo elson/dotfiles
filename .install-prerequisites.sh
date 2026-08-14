@@ -35,6 +35,13 @@ if [ "$(id -u)" -ne 0 ]; then
     sudo_cmd="sudo"
 fi
 
+# This script installs into ~/.local/bin and then calls what it installed, but
+# during bootstrap that directory is not yet on PATH — no shell config exists.
+# Only affects this process; chezmoi is the parent, which is why the rbw path is
+# also pinned in .chezmoi.toml.tmpl.
+PATH="${HOME}/.local/bin:${PATH}"
+export PATH
+
 install_darwin_prerequisites() {
     if ! xcode-select -p >/dev/null 2>&1; then
         echo "🛠   Installing Xcode Command Line Tools"
@@ -64,7 +71,9 @@ install_darwin_prerequisites() {
 
 install_debian_prerequisites() {
     missing=""
-    for package in ca-certificates curl git gnupg unzip; do
+    # pinentry-tty is needed by this script itself, for the rbw unlock below —
+    # it cannot wait for the apt package script, which runs later.
+    for package in ca-certificates curl git gnupg pinentry-tty unzip; do
         if ! dpkg-query -W -f='${Status}' "${package}" 2>/dev/null | grep -q "^install ok installed$"; then
             missing="${missing} ${package}"
         fi
@@ -115,8 +124,6 @@ install_rbw_debian() {
         mkdir -p "${HOME}/.local/bin"
         install -m 0755 "${tmp}/rbw" "${HOME}/.local/bin/rbw"
         install -m 0755 "${tmp}/rbw-agent" "${HOME}/.local/bin/rbw-agent"
-        PATH="${HOME}/.local/bin:${PATH}"
-        export PATH
     else
         warn "rbw download failed; run_onchange_after_21-rbw will retry"
     fi
@@ -143,10 +150,23 @@ setup_rbw() {
         rbw config set lock_timeout 86400 || warn "rbw config set lock_timeout failed"
     fi
 
+    # pinentry-curses needs a usable ncurses geometry, which it does not get when
+    # the rbw client is a hook whose stdio chezmoi owns — it dies with "Screen or
+    # window too small". pinentry-tty writes straight to the tty rbw passes it via
+    # --ttyname, with no layout to get wrong. The Linux boxes here are headless,
+    # so there is no GUI pinentry worth preferring.
+    if [ "$(uname -s)" = "Linux" ] && command -v pinentry-tty >/dev/null 2>&1 &&
+        ! rbw config show 2>/dev/null | grep -q '"pinentry": "pinentry-tty"'; then
+        echo "🔑  Setting rbw pinentry to pinentry-tty"
+        rbw config set pinentry pinentry-tty || warn "rbw config set pinentry failed"
+    fi
+
     if ! rbw unlocked >/dev/null 2>&1; then
         # unlock fails on a machine that has never logged in; login registers it
-        rbw unlock >/dev/null 2>&1 || rbw login ||
-            warn "could not unlock rbw; secret-backed files will not render"
+        if ! rbw unlock >/dev/null 2>&1 && ! rbw login; then
+            warn "could not unlock rbw. Run 'rbw login' in a normal shell, then"
+            warn "re-run chezmoi apply — secret-backed files will not render until then."
+        fi
     fi
 }
 

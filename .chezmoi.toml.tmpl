@@ -23,6 +23,16 @@
 [hooks.read-source-state.pre]
     command = "{{ .chezmoi.sourceDir }}/.install-prerequisites.sh"
 
+{{ if eq .chezmoi.os "linux" -}}
+# rbwFields shells out to this. An absolute path, because chezmoi finds it via
+# its own PATH — and during bootstrap that PATH has no ~/.local/bin: the
+# get.chezmoi.io one-liner runs chezmoi by absolute path, before any shell
+# config exists. Exporting PATH inside the prerequisites hook cannot help, since
+# the hook is a child of chezmoi, not its parent.
+[rbw]
+    command = "{{ .chezmoi.homeDir }}/.local/bin/rbw"
+
+{{ end -}}
 [diff]
     {{ if lookPath "delta" -}}command = "delta"
     {{ end -}}

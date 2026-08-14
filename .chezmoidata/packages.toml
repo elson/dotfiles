@@ -80,7 +80,7 @@ packages = [
 "jq",
 "lftp",
 "openssl",         # SSL/TLS cryptography
-"pinentry-curses", # rbw's master password prompt on headless boxes
+"pinentry-tty", # rbw's master password prompt; curses needs a geometry it cannot get from a hook
 "ripgrep",         # Search tool
 "tree",
 "unzip",   # needed by the release-download installers
