@@ -22,6 +22,12 @@ else
     SUDO="sudo"
 fi
 
+# LC_ALL=C because SSH forwards the client's locale; on a box that has not
+# generated it, apt output drowns in perl and apt-listchanges warnings.
+apt_get() {
+    ${SUDO} env LC_ALL=C LANGUAGE=C DEBIAN_FRONTEND=noninteractive apt-get "$@"
+}
+
 # The read-source-state hook (.install-prerequisites.sh) normally installs these
 # first, but it is deliberately non-fatal — so check rather than assume.
 prereqs=()
@@ -31,8 +37,8 @@ for package in ca-certificates curl gnupg; do
     fi
 done
 if [[ ${#prereqs[@]} -gt 0 ]]; then
-    ${SUDO} apt-get update
-    ${SUDO} apt-get install -y "${prereqs[@]}"
+    apt_get update
+    apt_get install -y "${prereqs[@]}"
 fi
 
 # shellcheck disable=SC1091
@@ -118,7 +124,7 @@ add_repo tailscale \
 
 if [[ ${changed} -eq 1 ]]; then
     echo "Refreshing apt indexes for the new repos"
-    ${SUDO} apt-get update
+    apt_get update
 fi
 
 {{- end }}

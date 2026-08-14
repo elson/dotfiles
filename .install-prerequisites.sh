@@ -69,6 +69,14 @@ install_darwin_prerequisites() {
     fi
 }
 
+apt_get() {
+    # LC_ALL=C because SSH forwards the client's locale, and on a box that has
+    # not generated it yet every apt run buries its output under perl and
+    # apt-listchanges warnings. C always exists. `env` rather than a prefix
+    # assignment, so the value survives sudo's env_reset either way.
+    ${sudo_cmd} env LC_ALL=C LANGUAGE=C DEBIAN_FRONTEND=noninteractive apt-get "$@"
+}
+
 install_debian_prerequisites() {
     missing=""
     # pinentry-tty is needed by this script itself, for the rbw unlock below —
@@ -84,8 +92,7 @@ install_debian_prerequisites() {
 
     echo "📦  Installing bootstrap packages:${missing}"
     # shellcheck disable=SC2086
-    if ! DEBIAN_FRONTEND=noninteractive ${sudo_cmd} apt-get update ||
-        ! DEBIAN_FRONTEND=noninteractive ${sudo_cmd} apt-get install -y ${missing}; then
+    if ! apt_get update || ! apt_get install -y ${missing}; then
         warn "apt bootstrap failed; later scripts will retry"
         return 1
     fi
@@ -208,6 +215,12 @@ case "$(uname -s)" in
             . /etc/os-release
             case "${ID:-}:${ID_LIKE:-}" in
                 debian:* | *:*debian*)
+                    # Twice on purpose. Most images ship the locales package, so
+                    # the first call fixes the locale before apt runs and its
+                    # output stays clean. On a minimal image locale-gen does not
+                    # exist yet, so that call no-ops and the second one — after
+                    # apt has installed locales — does the work.
+                    ensure_locale
                     install_debian_prerequisites || exit 0
                     ensure_locale
                     ;;
