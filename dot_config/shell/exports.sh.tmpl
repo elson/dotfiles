@@ -4,8 +4,9 @@
 export PATH={{ .chezmoi.homeDir }}/.local/bin:$PATH
 
 ### Language / Fonts
-export LANG="en_US.UTF-8"
-export LC_ALL="en_US.UTF-8"
+# LANG and LC_ALL are set at the top of .zshrc instead — they have to be in
+# place before antigen draws a prompt, which happens long before this file is
+# sourced, and the value has to be checked against what the box has generated.
 
 ### editor
 if [[ -n $SSH_CONNECTION ]]; then

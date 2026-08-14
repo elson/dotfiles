@@ -21,6 +21,12 @@ window-padding-y = 10
 unfocused-split-opacity = 0.4
 
 # Behavior settings
+# ssh-terminfo installs Ghostty's terminfo on remote hosts (infocmp here, tic
+# there) and caches the result; ssh-env falls back to xterm-256color and
+# forwards COLORTERM when that fails. Both are off by default, which leaves a
+# remote box with TERM=xterm-ghostty and no entry for it: tput then fails on
+# every prompt redraw.
+shell-integration-features = ssh-env,ssh-terminfo
 copy-on-select = clipboard
 quick-terminal-keyboard-interactivity = exclusive
 keybind = global:opt+backquote=toggle_quick_terminal

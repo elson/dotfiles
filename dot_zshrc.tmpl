@@ -1,4 +1,31 @@
 
+# --------------------------- TERMINAL SANITY -----------------------------
+#
+# Must come first: antigen installs oh-my-zsh below, which calls tput, and the
+# prompt is drawn before anything in .config/shell/exports.sh is sourced. SSH
+# forwards TERM and LC_* from the client, so both can name something this box
+# does not have — Ghostty sends TERM=xterm-ghostty, and a Mac sends
+# en_US.UTF-8 to a Debian box that generates only C.UTF-8. The symptoms are
+# `tput: unknown terminal` and a prompt of question marks.
+
+### An unknown TERM breaks tput and every escape sequence after it
+if command -v infocmp > /dev/null 2>&1 && ! infocmp "${TERM:-dumb}" > /dev/null 2>&1; then
+  export TERM=xterm-256color
+fi
+
+### Prefer the configured locale, but fall back to a UTF-8 one that exists —
+### anything non-UTF-8 turns multibyte prompt glyphs into "??????"
+if command -v locale > /dev/null 2>&1; then
+  _available_locales="$(locale -a 2>/dev/null)"
+  if echo "${_available_locales}" | grep -qix 'en_US\.\(utf8\|utf-8\)'; then
+    export LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8
+  elif echo "${_available_locales}" | grep -qix 'c\.\(utf8\|utf-8\)'; then
+    export LANG=C.UTF-8 LC_ALL=C.UTF-8
+  fi
+  unset _available_locales
+fi
+
+
 # ------------------------------- ANTIGEN ---------------------------------
 
 ### Antigen
