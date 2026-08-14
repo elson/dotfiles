@@ -47,12 +47,15 @@ if command -v antigen > /dev/null; then
   antigen bundle "MichaelAquilina/zsh-you-should-use"
   # antigen bundle marlonrichert/zsh-autocomplete@main
 
+  # Prompt: Pure. Sourcing pure.zsh activates it, so no promptinit is needed,
+  # and it replaces the theme rather than sitting alongside one. Both repos
+  # default to main and antigen assumes master, hence the explicit @main.
+  antigen bundle mafredri/zsh-async@main # Pure's async dependency
+  antigen bundle sindresorhus/pure@main
+
   # Bundles from the community repo (zsh-users).
   antigen bundle zsh-users/zsh-autosuggestions
   antigen bundle zsh-users/zsh-syntax-highlighting # Must be last bundle.
-
-  # Load the theme.
-  antigen theme robbyrussell
 
   # Tell Antigen that you're done.
   antigen apply
