@@ -1,22 +1,14 @@
 [packages.homebrew]
-to_remove = ["licecap", "glow", "gemini-cli", "lftp", "bitwarden-cli"]
+to_remove = []
 
-# bitwarden-cli is in to_remove, not just absent: rbw replaced it everywhere,
-# and `bw` left on PATH is a second, stateless client competing for the vault.
-#
 # Not managed here on purpose:
-#   awscli  - not installed on either OS; use the official installer on the boxes
-#             that need it (the ~/.config/aws profiles stay either way)
 #   chezmoi - installed by the bootstrap install script before this repo exists
-#   claude  - installed by run_once_after_22-claude-code on both OSes, because
-#             the official installer is what put ~/.local/bin/claude in place
-#             (the `claude` cask is the desktop app, a different artifact)
 
 [packages.homebrew.common]
 casks = ["bitwarden", "ghostty"]
 formulae = [
 "curl",
-"git",           # Markdown reader
+"git",
 "gpg",
 "gron",
 "jq",
@@ -54,6 +46,7 @@ formulae = [
 "tflint",
 "ansible",
 "gh",
+"tmux",  # Terminal multiplexer
 "herdr", # Agent multiplexer
 "mosh",  # SSH over flaky links; needs mosh-server on the far end too
 ]
@@ -71,9 +64,6 @@ formulae = [
 # before chezmoi reads the source state, so .install-prerequisites.sh installs
 # it and run_onchange_after_21-rbw only converges it after a pin bump.
 #
-# Still deliberately absent on Linux: glow (removed on darwin too) and awscli
-# (the Debian package lags badly, and it is no longer managed on darwin either —
-# see the note at the top of this file).
 # ---------------------------------------------------------------------------
 
 [packages.apt]
@@ -89,10 +79,11 @@ packages = [
 "lftp",
 "locales",         # so the en_US.UTF-8 that SSH forwards from the Mac exists here
 "openssl",         # SSL/TLS cryptography
-"pinentry-tty", # rbw's master password prompt; curses needs a geometry it cannot get from a hook
+"pinentry-tty",    # rbw's master password prompt; curses has issues with ssh sessions 
 "ripgrep",         # Search tool
 "tree",
 "unzip",   # needed by the release-download installers
+"vim",
 "wget",
 "zsh",
 # vendor repo: docker
@@ -108,12 +99,13 @@ packages = [
 [packages.apt.dev_computer]
 packages = [
 "ansible",
+"tmux",      # Terminal multiplexer
 "mosh",      # client and server in one package; only dev boxes are moshable
 "gh",        # vendor repo: cli.github.com
 "mise",      # vendor repo: mise.jdx.dev
 "terraform", # vendor repo: apt.releases.hashicorp.com
 ]
 
-# Linux boxes here are headless homelab members; GUI apps are darwin-only.
+# Linux boxes are headless; GUI apps are darwin-only.
 [packages.apt.personal_computer]
 packages = []
