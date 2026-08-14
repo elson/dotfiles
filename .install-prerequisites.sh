@@ -108,7 +108,19 @@ ensure_locale() {
         return 0
     fi
 
-    command -v locale-gen >/dev/null 2>&1 || return 1
+    # locale-gen lives in sbin, which Debian keeps off a normal user's PATH
+    # (/usr/local/bin:/usr/bin:/bin:/usr/games). `command -v` alone therefore
+    # misses it even with the locales package installed, and this function used
+    # to give up silently every single run. sudo's secure_path does include
+    # sbin, but the check has to find it first.
+    locale_gen=""
+    for candidate in "$(command -v locale-gen 2>/dev/null)" /usr/sbin/locale-gen /sbin/locale-gen; do
+        if [ -n "${candidate}" ] && [ -x "${candidate}" ]; then
+            locale_gen="${candidate}"
+            break
+        fi
+    done
+    [ -n "${locale_gen}" ] || return 1
 
     echo "🌐  Generating the en_US.UTF-8 locale"
     if [ -f /etc/locale.gen ] && ! grep -q '^en_US\.UTF-8 UTF-8' /etc/locale.gen; then
@@ -117,7 +129,7 @@ ensure_locale() {
         grep -q '^en_US\.UTF-8 UTF-8' /etc/locale.gen ||
             echo 'en_US.UTF-8 UTF-8' | ${sudo_cmd} tee -a /etc/locale.gen >/dev/null
     fi
-    ${sudo_cmd} locale-gen >/dev/null || warn "locale-gen failed; shells will keep warning"
+    ${sudo_cmd} "${locale_gen}" >/dev/null || warn "locale-gen failed; shells will keep warning"
 }
 
 install_rbw_darwin() {
