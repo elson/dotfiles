@@ -16,8 +16,8 @@ and on Debian-likes (Debian, Ubuntu, Proxmox).
 
 ## Prerequisites
 
-**Both platforms** — internet access, and a Bitwarden account if you answer `true` to
-`use_secrets` (answer `false` to skip every secret-backed file cleanly).
+**Both platforms** — internet access, and a Bitwarden account if you answer `yes` to
+`use_secrets` (answer `no` to skip every secret-backed file cleanly).
 
 **macOS** — nothing else. Xcode Command Line Tools and Homebrew are installed for you.
 
@@ -54,10 +54,16 @@ You will be prompted once for your Bitwarden master password during the first ap
 `rbw-agent` holds the key from then on, so the rest of the apply renders without asking
 again.
 
+When it finishes, run `exec zsh -l`. The shell you bootstrapped from predates everything
+just installed — it is still bash on Debian, and has no `~/.local/bin` on `PATH`, so
+`claude`, `rbw` and `herdr` will not resolve until you start a fresh login shell. The
+closing summary says so if it applies.
+
 ### Setup prompts
 
 Asked once on `chezmoi init`, then stored in `~/.config/chezmoi/chezmoi.toml` and never
-asked again:
+asked again. The three booleans take `yes`/`no` (chezmoi also accepts `y`/`n`, `on`/`off`
+and `true`/`false`); they are stored as TOML `true`/`false`:
 
 | Prompt | Data key | What it gates |
 |---|---|---|
@@ -83,7 +89,10 @@ the file phase, then `after_` scripts:
    installs the enabled machine classes' packages.
 3. **files applied** — templates rendered into `$HOME`.
 4. **`after_10_remove_packages`**, **`after_20-release-tools`** (gron, herdr, tflint),
-   **`after_21-rbw`**, **`after_22-claude-code`**, **`after_30-mise-install`**.
+   **`after_21-rbw`**, **`after_22-claude-code`**, **`after_30-mise-install`**,
+   **`after_40-default-shell`** *(Debian)* — makes zsh the login shell.
+5. **`.chezmoi-summary.sh`** — prints the completion banner, and how to pick up the new
+   shell and PATH when the session predates the apply.
 
 ## What's managed
 
@@ -188,6 +197,12 @@ prompt answers are not re-asked.
 logged in. `rbw unlock` fixes the first, `rbw login` the second; `rbw config show` will
 tell you whether the email is even set. Re-init with `use_secrets = false` to opt out of
 secret-backed files entirely.
+
+**Linux shells warn `setlocale: LC_ALL: cannot change locale (en_US.UTF-8)`.** SSH
+forwards `LANG`/`LC_*` from the client, and macOS sends `en_US.UTF-8`, which a stock
+Debian does not generate. The prerequisites hook generates it (`locales` +
+`locale-gen`); if warnings persist, check `locale -a | grep en_US` on that box. Boxes you
+only ever reach from a `C.UTF-8` client never see this.
 
 **No password prompt appears and rbw just fails.** `rbw` asks via `pinentry`. It is a
 Homebrew dependency on darwin, but Linux boxes need `pinentry-curses` — it is in the apt

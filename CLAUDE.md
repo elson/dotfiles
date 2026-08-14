@@ -59,8 +59,11 @@ Scripts with a `before_`/`after_` prefix run in those phases; a plain `run_once_
 2. `run_onchange_before_10-homebrew-packages` (darwin) / `run_onchange_before_11-apt-packages` (Debian) — install the enabled machine classes' packages; the darwin one skips casks when `is_ci_workflow`
 3. (files applied)
 4. `run_onchange_after_10_remove_packages` (both OSes), `run_onchange_after_20-release-tools` + `run_onchange_after_21-rbw` (Debian), `run_once_after_22-claude-code` (both), `run_onchange_after_30-mise-install` (dev machines that have `mise`)
+5. **`.chezmoi-summary.sh`** — another hook, on `hooks.apply.post`. Prints the completion banner and, when the session predates the apply, how to pick up the new login shell and PATH.
 
 ### The prerequisites hook
+
+There are two root-level hook scripts, both dot-prefixed so chezmoi does not treat them as targets: `.install-prerequisites.sh` on `hooks.read-source-state.pre`, and `.chezmoi-summary.sh` on `hooks.apply.post`. The summary is registered on `apply.post` alone because `init.post` *also* fires during `chezmoi init --apply` (verified in a sandbox), which would print it twice.
 
 `.install-prerequisites.sh` sits at the repo root; the leading dot keeps chezmoi from treating it as a target. It replaced `run_once_00-install-pre-requisites`, which could not work: as a plain `run_once_`, it ran *after* the `before_` package scripts, so on a bare machine Homebrew did not exist when `before_10` wanted it, and the Bitwarden client did not exist when the secret templates rendered. That is what made a fresh machine need two applies.
 

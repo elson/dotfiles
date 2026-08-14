@@ -1,6 +1,6 @@
-{{- $use_secrets := promptBoolOnce . "use_secrets" "Use secrets from Bitwarden? (true/false)" -}}
-{{- $personal_computer := promptBoolOnce . "personal_computer" "Is this a personal computer for daily driving? (true/false)" -}}
-{{- $dev_computer := promptBoolOnce . "dev_computer" "Do you do development on this computer? (true/false)" -}}
+{{- $use_secrets := promptBoolOnce . "use_secrets" "Use secrets from Bitwarden? (yes/no)" -}}
+{{- $personal_computer := promptBoolOnce . "personal_computer" "Is this a personal computer for daily driving? (yes/no)" -}}
+{{- $dev_computer := promptBoolOnce . "dev_computer" "Do you do development on this computer? (yes/no)" -}}
 {{- $email := promptStringOnce . "email" "Email address" -}}
 
 [data]
@@ -22,6 +22,11 @@
 # See .install-prerequisites.sh; it exits fast when everything is already present.
 [hooks.read-source-state.pre]
     command = "{{ .chezmoi.sourceDir }}/.install-prerequisites.sh"
+
+# Closes the loop after an apply. apply.post only: init.post fires as well
+# during `chezmoi init --apply`, which would print the summary twice.
+[hooks.apply.post]
+    command = "{{ .chezmoi.sourceDir }}/.chezmoi-summary.sh"
 
 {{ if eq .chezmoi.os "linux" -}}
 # rbwFields shells out to this. An absolute path, because chezmoi finds it via

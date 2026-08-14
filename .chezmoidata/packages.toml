@@ -87,6 +87,7 @@ packages = [
 "gnupg",   # gpg on darwin
 "jq",
 "lftp",
+"locales",         # so the en_US.UTF-8 that SSH forwards from the Mac exists here
 "openssl",         # SSL/TLS cryptography
 "pinentry-tty", # rbw's master password prompt; curses needs a geometry it cannot get from a hook
 "ripgrep",         # Search tool

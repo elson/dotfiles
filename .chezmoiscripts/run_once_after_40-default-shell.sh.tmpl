@@ -1,0 +1,44 @@
+{{- $id := dig "id" "" .chezmoi.osRelease -}}
+{{- $idLike := dig "idLike" "" .chezmoi.osRelease -}}
+{{- if and (eq .chezmoi.os "linux") (or (eq $id "debian") (contains "debian" $idLike)) -}}
+#!/usr/bin/env bash
+
+# Make zsh the login shell. Debian defaults to bash, so without this a fresh
+# box finishes the apply with a full zsh config it never loads.
+#
+# Linux only: macOS has shipped zsh as the default login shell since Catalina,
+# and pointing chsh at Homebrew's zsh instead would mean editing /etc/shells
+# for no real gain.
+#
+# after_ so the apt package script has installed zsh by the time this runs.
+
+set -eo pipefail
+
+if ! command -v zsh &>/dev/null; then
+    echo "zsh not installed; leaving the login shell alone" >&2
+    exit 0
+fi
+
+zsh_path="$(command -v zsh)"
+current_shell="$(getent passwd "$(id -un)" | cut -d: -f7)"
+
+if [[ ${current_shell} == "${zsh_path}" ]]; then
+    echo "✅  Login shell is already ${zsh_path}"
+    exit 0
+fi
+
+# chsh refuses any shell that is not listed in /etc/shells
+if ! grep -qxF "${zsh_path}" /etc/shells 2>/dev/null; then
+    echo "Adding ${zsh_path} to /etc/shells"
+    echo "${zsh_path}" | sudo tee -a /etc/shells >/dev/null
+fi
+
+echo "🐚  Setting the login shell to ${zsh_path}"
+# Via sudo so it does not prompt for a password mid-apply
+if sudo chsh -s "${zsh_path}" "$(id -un)"; then
+    echo "    Takes effect on the next login — 'exec zsh -l' switches now"
+else
+    echo "    chsh failed; run: chsh -s ${zsh_path}" >&2
+fi
+
+{{- end }}

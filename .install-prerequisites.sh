@@ -72,8 +72,9 @@ install_darwin_prerequisites() {
 install_debian_prerequisites() {
     missing=""
     # pinentry-tty is needed by this script itself, for the rbw unlock below —
-    # it cannot wait for the apt package script, which runs later.
-    for package in ca-certificates curl git gnupg pinentry-tty unzip; do
+    # it cannot wait for the apt package script, which runs later. Same for
+    # locales, which ensure_locale needs.
+    for package in ca-certificates curl git gnupg locales pinentry-tty unzip; do
         if ! dpkg-query -W -f='${Status}' "${package}" 2>/dev/null | grep -q "^install ok installed$"; then
             missing="${missing} ${package}"
         fi
@@ -88,6 +89,28 @@ install_debian_prerequisites() {
         warn "apt bootstrap failed; later scripts will retry"
         return 1
     fi
+}
+
+ensure_locale() {
+    # SSH forwards LANG and LC_* from the client, and a Mac sends en_US.UTF-8.
+    # Debian generates only C.UTF-8 by default, so every shell the apply spawns
+    # warns "setlocale: LC_ALL: cannot change locale (en_US.UTF-8)" — and
+    # pinentry loses its LC_CTYPE with it. Generate the locale the client asks
+    # for rather than fighting the forwarding.
+    if locale -a 2>/dev/null | grep -qix 'en_US\.\(utf8\|utf-8\)'; then
+        return 0
+    fi
+
+    command -v locale-gen >/dev/null 2>&1 || return 1
+
+    echo "🌐  Generating the en_US.UTF-8 locale"
+    if [ -f /etc/locale.gen ] && ! grep -q '^en_US\.UTF-8 UTF-8' /etc/locale.gen; then
+        # Uncomment the stock entry, or add one if the file has no such line
+        ${sudo_cmd} sed -i 's/^# *en_US\.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen
+        grep -q '^en_US\.UTF-8 UTF-8' /etc/locale.gen ||
+            echo 'en_US.UTF-8 UTF-8' | ${sudo_cmd} tee -a /etc/locale.gen >/dev/null
+    fi
+    ${sudo_cmd} locale-gen >/dev/null || warn "locale-gen failed; shells will keep warning"
 }
 
 install_rbw_darwin() {
@@ -184,7 +207,10 @@ case "$(uname -s)" in
             # shellcheck disable=SC1091
             . /etc/os-release
             case "${ID:-}:${ID_LIKE:-}" in
-                debian:* | *:*debian*) install_debian_prerequisites || exit 0 ;;
+                debian:* | *:*debian*)
+                    install_debian_prerequisites || exit 0
+                    ensure_locale
+                    ;;
                 *)
                     warn "unsupported Linux distribution: ${ID:-unknown}"
                     exit 0
