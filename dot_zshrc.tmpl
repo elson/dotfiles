@@ -45,13 +45,9 @@ if command -v antigen > /dev/null; then
 
   # Third-party plugins.
   antigen bundle "MichaelAquilina/zsh-you-should-use"
-  # antigen bundle marlonrichert/zsh-autocomplete@main
 
-  # Prompt: Pure. Sourcing pure.zsh activates it, so no promptinit is needed,
-  # and it replaces the theme rather than sitting alongside one. Both repos
-  # default to main and antigen assumes master, hence the explicit @main.
-  antigen bundle mafredri/zsh-async@main # Pure's async dependency
-  antigen bundle sindresorhus/pure@main
+  # Prompt: Starship. Must be installed via brew/apt first
+  antigen bundle axieax/zsh-starship
 
   # Bundles from the community repo (zsh-users).
   antigen bundle zsh-users/zsh-autosuggestions

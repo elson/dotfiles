@@ -12,9 +12,10 @@ formulae = [
 "gpg",
 "gron",
 "jq",
-"openssl",       # SSL/TLS cryptography
-"rbw",           # Bitwarden client backing every secret template
-"ripgrep",       # Search tool
+"openssl",  # SSL/TLS cryptography
+"starship", # Shell prompt
+"rbw",      # Bitwarden client backing every secret template
+"ripgrep",  # Search tool
 "tree",
 "wget",
 "zsh",
@@ -39,16 +40,16 @@ casks = [
 formulae = []
 
 [packages.homebrew.dev_computer]
-casks    = ["bruno", "visual-studio-code"]
+casks = ["bruno", "visual-studio-code"]
 formulae = [
 "mise",
 "hashicorp/tap/terraform",
 "tflint",
 "ansible",
 "gh",
-"tmux",  # Terminal multiplexer
-"herdr", # Agent multiplexer
-"mosh",  # SSH over flaky links; needs mosh-server on the far end too
+"tmux",                    # Terminal multiplexer
+"herdr",                   # Agent multiplexer
+"mosh",                    # SSH over flaky links; needs mosh-server on the far end too
 ]
 
 # ---------------------------------------------------------------------------
@@ -74,15 +75,16 @@ packages = [
 "ca-certificates",
 "curl",
 "git",
-"gnupg",   # gpg on darwin
+"gnupg",           # gpg on darwin
 "jq",
 "lftp",
 "locales",         # so the en_US.UTF-8 that SSH forwards from the Mac exists here
 "openssl",         # SSL/TLS cryptography
 "pinentry-tty",    # rbw's master password prompt; curses has issues with ssh sessions 
+"starship",        # Shell prompt
 "ripgrep",         # Search tool
 "tree",
-"unzip",   # needed by the release-download installers
+"unzip",           # needed by the release-download installers
 "vim",
 "wget",
 "zsh",
