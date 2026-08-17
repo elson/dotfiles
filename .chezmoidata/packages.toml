@@ -8,6 +8,7 @@ to_remove = []
 casks = ["bitwarden", "ghostty"]
 formulae = [
 "curl",
+"fzf",
 "git",
 "gpg",
 "gron",
@@ -74,6 +75,7 @@ to_remove = []
 packages = [
 "ca-certificates",
 "curl",
+"fzf",
 "git",
 "gnupg",           # gpg on darwin
 "jq",
