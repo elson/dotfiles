@@ -88,7 +88,7 @@ the file phase, then `after_` scripts:
 2. **`before_10-homebrew-packages`** *(darwin)* / **`before_11-apt-packages`** *(Debian)* —
    installs the enabled machine classes' packages.
 3. **files applied** — templates rendered into `$HOME`.
-4. **`after_10_remove_packages`**, **`after_20-release-tools`** (gron, herdr, tflint),
+4. **`after_10_remove_packages`**, **`after_20-release-tools`** (gron, sops, herdr, tflint),
    **`after_21-rbw`**, **`after_22-claude-code`**, **`after_30-mise-install`**,
    **`after_40-default-shell`** *(Debian)* — makes zsh the login shell.
 5. **`.chezmoi-summary.sh`** — prints the completion banner, and how to pick up the new
@@ -116,7 +116,7 @@ failure in one can't block the others:
 |---|---|
 | In the Debian archive / a Homebrew formula | add to the `packages.apt.*` or `packages.homebrew.*` array |
 | Has an official apt repo (docker, gh, tailscale, mise, terraform) | add the repo to `before_09-apt-repos`, then list the package in the apt array — apt then owns upgrades |
-| Release download only (gron, herdr, tflint, rbw) | pin the version in [`.chezmoidata/packages.yaml`](.chezmoidata/packages.yaml) and install it in an `after_2x` script; bumping the pin is what re-runs it |
+| Release download only (gron, sops, herdr, tflint, rbw) | pin the version in [`.chezmoidata/packages.yaml`](.chezmoidata/packages.yaml) and install it in an `after_2x` script; bumping the pin is what re-runs it |
 | Self-updating installer (claude) | `run_once_`, guarded by `command -v` |
 
 Not managed on purpose: **chezmoi** (installed by the bootstrap command above, before this

@@ -7,12 +7,14 @@ to_remove = []
 [packages.homebrew.common]
 casks = ["bitwarden", "ghostty"]
 formulae = [
+"age",      # File encryption; the key backend for sops
 "curl",
 "fzf",
 "git",
 "gpg",
 "gron",
 "jq",
+"sops",     # Encrypted-secrets editor (apt has it only from trixie, see below)
 "openssl",  # SSL/TLS cryptography
 "starship", # Shell prompt
 "rbw",      # Bitwarden client backing every secret template
@@ -61,8 +63,10 @@ formulae = [
 # they only resolve after that script has run.
 #
 # Tools with no apt package at all are installed from a pinned release by
-# run_onchange_after_20-release-tools (gron, herdr, tflint); versions live in
-# packages.yaml. rbw is the exception: absent from Debian stable, and needed
+# run_onchange_after_20-release-tools (gron, herdr, tflint, sops); versions live
+# in packages.yaml. sops is only in the archive from trixie on, so it takes the
+# upstream binary everywhere rather than breaking a bookworm-era box (Proxmox).
+# rbw is the exception: absent from Debian stable, and needed
 # before chezmoi reads the source state, so .install-prerequisites.sh installs
 # it and run_onchange_after_21-rbw only converges it after a pin bump.
 #
@@ -73,6 +77,7 @@ to_remove = []
 
 [packages.apt.common]
 packages = [
+"age",             # file encryption; the key backend for sops
 "ca-certificates",
 "curl",
 "fzf",

@@ -80,7 +80,7 @@ Changing the hook stanza means existing machines need `chezmoi init` re-run to r
 
 - **In the Debian archive** → add to the `packages.apt.*` array. Done.
 - **Has an official apt repo** (docker, gh, tailscale, mise, terraform) → add the repo to `run_onchange_before_09-apt-repos` via `add_repo`, then list the package in the apt array like any other. More maintainable than a vendor install script, and apt handles upgrades.
-- **Release download only** (gron, herdr, tflint, rbw) → pin it in `.chezmoidata/packages.yaml` and install it in a `run_onchange_after_2x` script, into `~/.local/bin` without sudo. The pin is what triggers the re-run. `rbw` is the exception that proves the rule: templates need it *before* any script runs, so the hook installs it too, and `after_21-rbw` exists only to move an already-installed box onto a bumped pin.
+- **Release download only** (gron, sops, herdr, tflint, rbw) → pin it in `.chezmoidata/packages.yaml` and install it in a `run_onchange_after_2x` script, into `~/.local/bin` without sudo. The pin is what triggers the re-run. `rbw` is the exception that proves the rule: templates need it *before* any script runs, so the hook installs it too, and `after_21-rbw` exists only to move an already-installed box onto a bumped pin.
 - **Self-updating installer** (claude) → `run_once_`, guarded by `command -v`. Nothing to pin.
 
 Keep these groups in separate scripts so an apt failure cannot block a download installer, and vice versa.
