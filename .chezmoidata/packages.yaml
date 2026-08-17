@@ -9,9 +9,6 @@ versions:
   gron: "0.7.1"    # .chezmoiscripts/run_onchange_after_20-release-tools
   herdr: "0.8.0"   # .chezmoiscripts/run_onchange_after_20-release-tools
   tflint: "0.64.0" # .chezmoiscripts/run_onchange_after_20-release-tools
-  # sops reached the Debian archive only in trixie; take the upstream binary so
-  # bookworm-era boxes (Proxmox) get it too. age comes from apt, it's older there.
-  sops: "3.13.3"   # .chezmoiscripts/run_onchange_after_20-release-tools
   # rbw is absent from Debian stable (forky/sid only), so Linux takes the
   # upstream tarball. Installed by .install-prerequisites.sh rather than a
   # run_ script, because rbwFields renders during the file phase; the

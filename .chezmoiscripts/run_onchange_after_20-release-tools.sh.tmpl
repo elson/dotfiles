@@ -12,7 +12,6 @@
 #   gron   {{ .versions.gron }}
 #   herdr  {{ .versions.herdr }}
 #   tflint {{ .versions.tflint }}
-#   sops   {{ .versions.sops }}
 
 set -eo pipefail
 
@@ -110,27 +109,7 @@ install_herdr() {
     _recordVersion_ herdr "${version}"
 }
 
-install_sops() {
-    local version="{{ .versions.sops }}"
-    if _stampMatches_ sops "${version}"; then
-        echo "✅  sops ${version} already installed"
-        return 0
-    fi
-
-    # A bare static binary, not an archive — asset names use the Debian arch
-    local tmp
-    tmp="$(mktemp -d)"
-    trap 'rm -rf "${tmp}"' RETURN
-
-    echo "⬇️   Installing sops ${version} (${arch})"
-    curl -fsSL --max-time 120 -o "${tmp}/sops" \
-        "https://github.com/getsops/sops/releases/download/v${version}/sops-v${version}.linux.${arch}"
-    install -m 0755 "${tmp}/sops" "${BIN_DIR}/sops"
-    _recordVersion_ sops "${version}"
-}
-
 install_gron
-install_sops
 
 {{ if .dev_computer }}
 install_herdr
