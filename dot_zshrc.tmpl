@@ -37,11 +37,14 @@ if command -v antigen > /dev/null; then
   antigen use oh-my-zsh
 
   # Bundles from the default repo (robbyrussell's oh-my-zsh).
+  antigen bundle fzf
   antigen bundle git
   antigen bundle brew
   antigen bundle ansible
   antigen bundle terraform
+  antigen bundle docker-compose
   antigen bundle common-aliases
+  antigen bundle dirhistory
 
   # Third-party plugins.
   antigen bundle "MichaelAquilina/zsh-you-should-use"
