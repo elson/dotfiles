@@ -69,7 +69,7 @@ and `true`/`false`); they are stored as TOML `true`/`false`:
 |---|---|---|
 | Use secrets from Bitwarden? | `use_secrets` | `~/.config/aws/credentials`, `~/.config/shell/private.sh`, and the `rbw` install + unlock in the prerequisites hook. `false` makes those targets disappear via `.chezmoiignore`. |
 | Is this a personal computer for daily driving? | `personal_computer` | GUI apps — browsers, Slack, Obsidian, Docker Desktop, Tailscale (darwin only; the Linux boxes are headless). |
-| Do you do development on this computer? | `dev_computer` | mise, terraform, tflint, ansible, gh, Claude Code, and the `mise install` run. |
+| Do you do development on this computer? | `dev_computer` | mise, gh, Claude Code, and the `mise install` run. |
 | Email address | `email` | Git identity and the Bitwarden login. |
 
 To change an answer later, edit `~/.config/chezmoi/chezmoi.toml` directly or re-run
@@ -83,12 +83,12 @@ the file phase, then `after_` scripts:
 0. **`.install-prerequisites.sh`** — Xcode CLT + Homebrew (macOS), `curl`/`git`/`gnupg`/
    `unzip` (Debian), and `rbw`, which it then unlocks. Runs before chezmoi even reads the
    repo, so the secret templates have a live vault by the time they render.
-1. **`before_09-apt-repos`** *(Debian)* — adds the mise, HashiCorp, GitHub CLI, Docker,
-   and Tailscale apt repos, skipping any that don't publish for the box's codename.
+1. **`before_09-apt-repos`** *(Debian)* — adds the mise, GitHub CLI, Docker, and
+   Tailscale apt repos, skipping any that don't publish for the box's codename.
 2. **`before_10-homebrew-packages`** *(darwin)* / **`before_11-apt-packages`** *(Debian)* —
    installs the enabled machine classes' packages.
 3. **files applied** — templates rendered into `$HOME`.
-4. **`after_10_remove_packages`**, **`after_20-release-tools`** (gron, herdr, tflint),
+4. **`after_10_remove_packages`**, **`after_20-release-tools`** (gron, herdr),
    **`after_21-rbw`**, **`after_22-claude-code`**, **`after_30-mise-install`**,
    **`after_40-default-shell`** *(Debian)* — makes zsh the login shell.
 5. **`.chezmoi-summary.sh`** — prints the completion banner, and how to pick up the new
@@ -115,8 +115,8 @@ failure in one can't block the others:
 | Situation | Mechanism |
 |---|---|
 | In the Debian archive / a Homebrew formula | add to the `packages.apt.*` or `packages.homebrew.*` array |
-| Has an official apt repo (docker, gh, tailscale, mise, terraform) | add the repo to `before_09-apt-repos`, then list the package in the apt array — apt then owns upgrades |
-| Release download only (gron, herdr, tflint, rbw) | pin the version in [`.chezmoidata/packages.yaml`](.chezmoidata/packages.yaml) and install it in an `after_2x` script; bumping the pin is what re-runs it |
+| Has an official apt repo (docker, gh, tailscale, mise) | add the repo to `before_09-apt-repos`, then list the package in the apt array — apt then owns upgrades |
+| Release download only (gron, herdr, rbw) | pin the version in [`.chezmoidata/packages.yaml`](.chezmoidata/packages.yaml) and install it in an `after_2x` script; bumping the pin is what re-runs it |
 | Self-updating installer (claude) | `run_once_`, guarded by `command -v` |
 
 Not managed on purpose: **chezmoi** (installed by the bootstrap command above, before this

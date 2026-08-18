@@ -92,11 +92,6 @@ add_repo mise \
     "https://mise.jdx.dev/gpg-key.pub" armored \
     "https://mise.jdx.dev/deb" stable main
 
-# terraform (and the rest of the HashiCorp tools)
-add_repo hashicorp \
-    "https://apt.releases.hashicorp.com/gpg" armored \
-    "https://apt.releases.hashicorp.com" "${codename}" main
-
 # gh — also a single "stable" suite; key is already dearmored
 add_repo github-cli \
     "https://cli.github.com/packages/githubcli-archive-keyring.gpg" binary \

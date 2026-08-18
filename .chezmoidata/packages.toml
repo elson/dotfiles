@@ -44,9 +44,6 @@ formulae = []
 casks = ["bruno", "visual-studio-code"]
 formulae = [
 "mise",
-"hashicorp/tap/terraform",
-"tflint",
-"ansible",
 "gh",
 "tmux",                    # Terminal multiplexer
 "herdr",                   # Agent multiplexer
@@ -61,7 +58,7 @@ formulae = [
 # they only resolve after that script has run.
 #
 # Tools with no apt package at all are installed from a pinned release by
-# run_onchange_after_20-release-tools (gron, herdr, tflint); versions live in
+# run_onchange_after_20-release-tools (gron, herdr); versions live in
 # packages.yaml. rbw is the exception: absent from Debian stable, and needed
 # before chezmoi reads the source state, so .install-prerequisites.sh installs
 # it and run_onchange_after_21-rbw only converges it after a pin bump.
@@ -86,7 +83,7 @@ packages = [
 "starship",        # Shell prompt
 "ripgrep",         # Search tool
 "tree",
-"unzip",           # needed by the release-download installers
+"unzip",
 "vim",
 "wget",
 "zsh",
@@ -102,12 +99,10 @@ packages = [
 
 [packages.apt.dev_computer]
 packages = [
-"ansible",
-"tmux",      # Terminal multiplexer
-"mosh",      # client and server in one package; only dev boxes are moshable
-"gh",        # vendor repo: cli.github.com
-"mise",      # vendor repo: mise.jdx.dev
-"terraform", # vendor repo: apt.releases.hashicorp.com
+"tmux", # Terminal multiplexer
+"mosh", # client and server in one package; only dev boxes are moshable
+"gh",   # vendor repo: cli.github.com
+"mise", # vendor repo: mise.jdx.dev
 ]
 
 # Linux boxes are headless; GUI apps are darwin-only.

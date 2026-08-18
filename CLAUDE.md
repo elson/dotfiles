@@ -37,7 +37,7 @@ Source filenames encode target attributes; renaming changes behaviour:
 
 Static data lives in `.chezmoidata/`, auto-merged into the template namespace:
 - `packages.toml` → `.packages.homebrew.{common,dev_computer,personal_computer}.{formulae,casks}` (darwin) and `.packages.apt.{common,dev_computer,personal_computer}.packages` (Debian-likes), each plus `to_remove`
-- `packages.yaml` → `.versions.<tool>` = pinned versions for the tools installed from a release download (`gron`, `herdr`, `tflint`, `rbw`). Nothing else belongs here: apt owns upgrades for repo-backed packages, and `claude` self-updates.
+- `packages.yaml` → `.versions.<tool>` = pinned versions for the tools installed from a release download (`gron`, `herdr`, `rbw`). Nothing else belongs here: apt owns upgrades for repo-backed packages, and `claude` self-updates.
 - `bitwarden.toml` → `.bitwarden.items.<name>` = Bitwarden item UUIDs
 
 ## Secrets: Bitwarden
@@ -55,7 +55,7 @@ There is no session file and no `BW_SESSION` plumbing: `rbw-agent` holds the vau
 Scripts with a `before_`/`after_` prefix run in those phases; a plain `run_once_NN` runs in the file phase, *between* them. Nothing in `.chezmoiscripts/` runs early enough to install a prerequisite that templates or `before_` scripts need — that job belongs to the hook in step 0.
 
 0. **`.install-prerequisites.sh`** — not a script target at all. It is wired to `hooks.read-source-state.pre` in `.chezmoi.toml.tmpl`, so chezmoi runs it *before reading the source state*: earlier than any `run_` script and before any `rbwFields` template is rendered. Installs Xcode CLT + Homebrew (darwin), the apt basics (Debian), and `rbw` when `use_secrets` — then unlocks the rbw agent. See "The prerequisites hook" below.
-1. `run_onchange_before_09-apt-repos` (Debian) — add the mise / HashiCorp / gh / docker / tailscale apt repos
+1. `run_onchange_before_09-apt-repos` (Debian) — add the mise / gh / docker / tailscale apt repos
 2. `run_onchange_before_10-homebrew-packages` (darwin) / `run_onchange_before_11-apt-packages` (Debian) — install the enabled machine classes' packages; the darwin one skips casks when `is_ci_workflow`
 3. (files applied)
 4. `run_onchange_after_10_remove_packages` (both OSes), `run_onchange_after_20-release-tools` + `run_onchange_after_21-rbw` (Debian), `run_once_after_22-claude-code` (both), `run_onchange_after_30-mise-install` (dev machines that have `mise`)
@@ -79,8 +79,8 @@ Changing the hook stanza means existing machines need `chezmoi init` re-run to r
 ### Which mechanism for a new tool
 
 - **In the Debian archive** → add to the `packages.apt.*` array. Done.
-- **Has an official apt repo** (docker, gh, tailscale, mise, terraform) → add the repo to `run_onchange_before_09-apt-repos` via `add_repo`, then list the package in the apt array like any other. More maintainable than a vendor install script, and apt handles upgrades.
-- **Release download only** (gron, herdr, tflint, rbw) → pin it in `.chezmoidata/packages.yaml` and install it in a `run_onchange_after_2x` script, into `~/.local/bin` without sudo. The pin is what triggers the re-run. `rbw` is the exception that proves the rule: templates need it *before* any script runs, so the hook installs it too, and `after_21-rbw` exists only to move an already-installed box onto a bumped pin.
+- **Has an official apt repo** (docker, gh, tailscale, mise) → add the repo to `run_onchange_before_09-apt-repos` via `add_repo`, then list the package in the apt array like any other. More maintainable than a vendor install script, and apt handles upgrades.
+- **Release download only** (gron, herdr, rbw) → pin it in `.chezmoidata/packages.yaml` and install it in a `run_onchange_after_2x` script, into `~/.local/bin` without sudo. The pin is what triggers the re-run. `rbw` is the exception that proves the rule: templates need it *before* any script runs, so the hook installs it too, and `after_21-rbw` exists only to move an already-installed box onto a bumped pin.
 - **Self-updating installer** (claude) → `run_once_`, guarded by `command -v`. Nothing to pin.
 
 Keep these groups in separate scripts so an apt failure cannot block a download installer, and vice versa.

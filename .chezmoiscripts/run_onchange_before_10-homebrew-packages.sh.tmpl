@@ -58,7 +58,7 @@ failed=()
 
 for formula in ${formulae[@]}; do
     # brew list reports the bare name, so a tapped formula must be compared on
-    # its basename: hashicorp/tap/terraform -> terraform
+    # its basename: vendor/tap/foo -> foo
     formula_name="${formula##*/}"
 
     if ! _inArray_ -i "${formula_name}" "${currently_installed_formulae[@]}"; then

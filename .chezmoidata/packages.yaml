@@ -2,13 +2,12 @@
 # manager. The pin is what makes the corresponding run_onchange_ script re-run:
 # bump a version here and the rendered script changes, so chezmoi executes it again.
 #
-# Tools installed from a vendor apt repo (mise, terraform, gh, docker, tailscale)
+# Tools installed from a vendor apt repo (mise, gh, docker, tailscale)
 # are deliberately absent — apt owns their upgrades. So is claude, which
 # self-updates after its run_once_ installer has placed it.
 versions:
   gron: "0.7.1"    # .chezmoiscripts/run_onchange_after_20-release-tools
   herdr: "0.8.0"   # .chezmoiscripts/run_onchange_after_20-release-tools
-  tflint: "0.64.0" # .chezmoiscripts/run_onchange_after_20-release-tools
   # rbw is absent from Debian stable (forky/sid only), so Linux takes the
   # upstream tarball. Installed by .install-prerequisites.sh rather than a
   # run_ script, because rbwFields renders during the file phase; the
