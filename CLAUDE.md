@@ -124,3 +124,9 @@ The scripts that need the distro codename or architecture read them from `/etc/o
 - `dot_config/shell/{aliases,exports}.sh.tmpl` — sourced by `.zshrc`; `exports.sh.tmpl` points AWS at `~/.config/aws` and, on darwin only, sets `SSH_AUTH_SOCK` to the Bitwarden desktop app's agent socket (that app is macOS-only, so Linux keeps whatever agent the session provides).
 - `private_dot_ssh/config` — homelab hosts (Star Trek names → LAN IPs); public keys only in `private_keys/`.
 - `dot_agents/skills/` — agent skills, stored as real files and applied to `~/.agents/skills`. This is the single source of truth: `dot_claude/symlink_skills.tmpl` points `~/.claude/skills` at it, so Claude Code sees the same set. Add a skill under `dot_agents/skills/`, not under `~/.claude/skills`.
+
+## Code Comments & Style
+
+- **No redundant comments**: Write self-documenting code. Never add comments that restate what the code clearly does.
+- **Explain the 'why', not the 'what'**: Only comment non-obvious logic, tricky business constraints, or platform-specific workarounds.
+- **No conversational filler**: In your chat output, omit preamble, apologies, or restatements of what was requested. Output the code or solution directly.
