@@ -45,9 +45,9 @@ casks = ["bruno", "visual-studio-code"]
 formulae = [
 "mise",
 "gh",
-"tmux",                    # Terminal multiplexer
-"herdr",                   # Agent multiplexer
-"mosh",                    # SSH over flaky links; needs mosh-server on the far end too
+"tmux",  # Terminal multiplexer
+"herdr", # Agent multiplexer
+"mosh",  # SSH over flaky links; needs mosh-server on the far end too
 ]
 
 # ---------------------------------------------------------------------------
@@ -99,10 +99,11 @@ packages = [
 
 [packages.apt.dev_computer]
 packages = [
-"tmux", # Terminal multiplexer
-"mosh", # client and server in one package; only dev boxes are moshable
-"gh",   # vendor repo: cli.github.com
-"mise", # vendor repo: mise.jdx.dev
+"build-essential", # make, etc
+"tmux",            # Terminal multiplexer
+"mosh",            # client and server in one package; only dev boxes are moshable
+"gh",              # vendor repo: cli.github.com
+"mise",            # vendor repo: mise.jdx.dev
 ]
 
 # Linux boxes are headless; GUI apps are darwin-only.
