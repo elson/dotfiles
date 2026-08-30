@@ -16,19 +16,31 @@ else
 fi
 
 ### SSH agent — rbw-agent has one built in, holding the keys from the vault
-# Mirrors runtime_dir() in rbw's src/dirs.rs: XDG_RUNTIME_DIR when the platform
-# provides one, otherwise {temp_dir}/{profile}-{uid} — which is what macOS
-# always uses, since it has no runtime dir. Same code path on both OSes.
-if [ -n "${XDG_RUNTIME_DIR:-}" ]; then
-    _rbw_runtime_dir="${XDG_RUNTIME_DIR}/rbw"
-else
-    _rbw_runtime_dir="${TMPDIR:-/tmp}/rbw-$(id -u)"
-fi
-# Only when the socket is really there: a shell started before the agent should
-# keep whatever agent the session provides rather than point ssh at a dead path.
-[ -S "${_rbw_runtime_dir}/ssh-agent-socket" ] &&
+# Skipped inside an SSH session: there SSH_AUTH_SOCK is the agent forwarded from the
+# client (ForwardAgent yes for every host in ~/.ssh/config), and this file is applied on
+# the Debian boxes too — overriding it would swap the keys the session arrived with for
+# whatever the remote vault holds.
+if [ -z "${SSH_CONNECTION:-}" ] && command -v rbw-agent >/dev/null 2>&1; then
+    # Mirrors runtime_dir() in rbw's src/dirs.rs: XDG_RUNTIME_DIR when the platform
+    # provides one, otherwise {temp_dir}/{profile}-{uid} — which is what macOS always
+    # uses, since it has no runtime dir. Same code path on both OSes.
+    if [ -n "${XDG_RUNTIME_DIR:-}" ]; then
+        _rbw_runtime_dir="${XDG_RUNTIME_DIR}/rbw"
+    else
+        _rbw_runtime_dir="${TMPDIR:-/tmp}/rbw-$(id -u)"
+    fi
+    # Unconditional, unlike the old `[ -S ... ] &&` guard: rbw-agent starts lazily on the
+    # first rbw command, so a shell opened before that kept whatever agent the session
+    # had — on macOS a launchd one holding no identities — and every ssh fell through to
+    # a password prompt. The path is fixed per user, so exporting it before the agent
+    # exists costs nothing and starts working the moment the agent does.
     export SSH_AUTH_SOCK="${_rbw_runtime_dir}/ssh-agent-socket"
-unset _rbw_runtime_dir
+    # rbw-agent daemonizes itself, so this returns immediately; backgrounding it would
+    # print a job number into an interactive shell. `|| :` keeps a failed start from
+    # leaving a non-zero $? for the prompt.
+    [ -S "${SSH_AUTH_SOCK}" ] || rbw-agent >/dev/null 2>&1 || :
+    unset _rbw_runtime_dir
+fi
 
 ### AWS CLI
 export AWS_CONFIG_FILE={{ .xdgConfigDir }}/aws/config

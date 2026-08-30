@@ -48,7 +48,11 @@ The client is [`rbw`](https://github.com/doy/rbw), not the official `bw`. `rbwFi
 
 There is no session file and no `BW_SESSION` plumbing: `rbw-agent` holds the vault key in memory the way `ssh-agent` holds keys. The prerequisites hook unlocks the agent before chezmoi reads the source state, so an apply costs one pinentry prompt no matter how many secrets it renders — `bw` needed one per `bitwardenFields` call, because the session file it wrote was never in chezmoi's environment. The hook also sets `lock_timeout` to 86400 (rbw's default is 3600), so a working day's worth of applies costs one prompt in total.
 
-`rbw-agent` also serves an SSH agent socket in its runtime dir (`$XDG_RUNTIME_DIR/rbw`, or `${TMPDIR}/rbw-<uid>` where the platform has no runtime dir, which is always the case on macOS). `dot_config/shell/exports.sh.tmpl` computes that path at shell startup and points `SSH_AUTH_SOCK` at it *only if the socket exists*, so a shell started before the agent keeps whatever agent the session already had. This replaced the Bitwarden desktop app's socket, which was darwin-only.
+`rbw-agent` also serves an SSH agent socket in its runtime dir (`$XDG_RUNTIME_DIR/rbw`, or `${TMPDIR}/rbw-<uid>` where the platform has no runtime dir, which is always the case on macOS). `dot_config/shell/exports.sh.tmpl` computes that path at shell startup, points `SSH_AUTH_SOCK` at it unconditionally, and starts `rbw-agent` when the socket is not there yet. This replaced the Bitwarden desktop app's socket, which was darwin-only.
+
+Both halves of that matter. `~/.ssh/config` sets `IdentitiesOnly yes` with a *public* key as the `IdentityFile` — no private key is ever on disk — so ssh has no fallback: an agent it cannot reach means a password prompt, on every host. And `rbw-agent` starts lazily, on the first `rbw` command. The export used to be guarded on the socket already existing, which meant every shell opened between a reboot and the first `rbw` command silently kept macOS's launchd agent, which holds no identities. Exporting a path that does not exist yet costs nothing, since the path is fixed per user and starts working the moment the agent does.
+
+The block is skipped entirely inside an SSH session (`$SSH_CONNECTION` set). `ForwardAgent yes` applies to every host in `~/.ssh/config` and this file is applied on the Debian boxes too, so overriding `SSH_AUTH_SOCK` there would swap the forwarded keys the session arrived with for whatever the remote box's own vault holds.
 
 ## Script ordering on a fresh machine
 
@@ -121,7 +125,7 @@ The scripts that need the distro codename or architecture read them from `/etc/o
 ## Other structure
 
 - `.chezmoiexternal.toml` — downloads antigen.zsh into `~/.local/scripts/`; `dot_zshrc.tmpl` sources it and defines the zsh plugin set.
-- `dot_config/shell/{aliases,exports}.sh.tmpl` — sourced by `.zshrc`; `exports.sh.tmpl` points AWS at `~/.config/aws` and, on darwin only, sets `SSH_AUTH_SOCK` to the Bitwarden desktop app's agent socket (that app is macOS-only, so Linux keeps whatever agent the session provides).
+- `dot_config/shell/{aliases,exports}.sh.tmpl` — sourced by `.zshrc`; `exports.sh.tmpl` points AWS at `~/.config/aws` and sets `SSH_AUTH_SOCK` to `rbw-agent`'s socket (see "Secrets: Bitwarden" above).
 - `private_dot_ssh/config` — homelab hosts (Star Trek names → LAN IPs); public keys only in `private_keys/`.
 - `dot_agents/skills/` — agent skills, stored as real files and applied to `~/.agents/skills`. This is the single source of truth: `dot_claude/symlink_skills.tmpl` points `~/.claude/skills` at it, so Claude Code sees the same set. Add a skill under `dot_agents/skills/`, not under `~/.claude/skills`.
 

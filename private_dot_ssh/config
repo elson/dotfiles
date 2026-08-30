@@ -22,6 +22,9 @@ Host lore
 Host obrien
     HostName 192.168.0.15
 
+Host guinan
+    HostName 192.168.0.16
+
 Host agentbox
     HostName 192.168.0.152
     User elson
