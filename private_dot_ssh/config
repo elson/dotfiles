@@ -29,6 +29,12 @@ Host agentbox
     HostName 192.168.0.152
     User elson
 
+Host sisko
+    HostName 2.28.16.35
+    # Internet-facing: never forward the agent here.
+    ForwardAgent no
+
+
 Host *
     AddKeysToAgent yes
     ForwardAgent yes
