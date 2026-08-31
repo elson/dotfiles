@@ -43,6 +43,21 @@ casks=(
     {{ end }}
 )
 
+# Homebrew 6 refuses to load formulae/casks from a third-party tap until the tap
+# is trusted, and trusting it interactively would break an unattended apply. A
+# vendor/tap/name entry in packages.toml is already the decision to trust that
+# tap, so derive the tap list from the package names rather than duplicating it.
+trusted_taps=()
+for package in "${formulae[@]}" "${casks[@]}"; do
+    [[ ${package} == */*/* ]] || continue
+    tap="${package%/*}"
+
+    if ! _inArray_ -i "${tap}" "${trusted_taps[@]}"; then
+        trusted_taps+=("${tap}")
+        brew trust --quiet --tap "${tap}"
+    fi
+done
+
 currently_installed_formulae=($(brew list --formula -1))
 currently_installed_casks=($(brew list --cask -1))
 

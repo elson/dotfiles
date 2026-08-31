@@ -29,6 +29,7 @@ casks = [
 "docker-desktop",
 "google-drive",
 "marta",
+"netbirdio/tap/netbird-ui",
 "obsidian",
 "raycast",
 "slack",
