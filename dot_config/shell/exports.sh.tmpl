@@ -16,11 +16,17 @@ else
 fi
 
 ### SSH agent — rbw-agent has one built in, holding the keys from the vault
-# Skipped inside an SSH session: there SSH_AUTH_SOCK is the agent forwarded from the
-# client (ForwardAgent yes for every host in ~/.ssh/config), and this file is applied on
-# the Debian boxes too — overriding it would swap the keys the session arrived with for
-# whatever the remote vault holds.
-if [ -z "${SSH_CONNECTION:-}" ] && command -v rbw-agent >/dev/null 2>&1; then
+# Inside an SSH session SSH_AUTH_SOCK is normally the agent forwarded from the client
+# (ForwardAgent yes for every host in ~/.ssh/config) and those keys win: this file is
+# applied on the Debian boxes too, so overriding a *live* forwarded socket would swap
+# the keys the session arrived with for whatever the remote vault holds. But that socket
+# dies with the sshd that created it, and anything that outlives one session — tmux, a
+# reattached screen, a long-running daemon — is left pointing at a path that no longer
+# exists. With IdentitiesOnly yes and no private key on disk, ssh has no fallback, so
+# that is a password prompt on every host. Hence: keep the forwarded socket only while
+# it is a live socket, and otherwise fall back to rbw-agent's, same as off-SSH.
+if command -v rbw-agent >/dev/null 2>&1 &&
+   { [ -z "${SSH_CONNECTION:-}" ] || [ ! -S "${SSH_AUTH_SOCK:-}" ]; }; then
     # Mirrors runtime_dir() in rbw's src/dirs.rs: XDG_RUNTIME_DIR when the platform
     # provides one, otherwise {temp_dir}/{profile}-{uid} — which is what macOS always
     # uses, since it has no runtime dir. Same code path on both OSes.
