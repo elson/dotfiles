@@ -12,7 +12,7 @@ Neither answer is `brew install` typed into a shell. That works exactly once, on
 ## 1. Decide the scope
 
 - **Global** — software wanted on every personal machine: laptop, dev boxes, the lot. Editors, shells, `jq`, `ripgrep`, language runtimes used everywhere. These are declared in the dotfiles repo, and the rest of this skill is about them.
-- **Project** — a tool or dependency of one codebase: its linter, its formatter, its build tooling, the runtime version that codebase pins. These belong to **that repo**, not here.
+- **Project** — anything one codebase needs to build, test or run: its toolchain, its linter, its libraries. These belong to **that repo**, not here, and they split into two layers of their own.
 
 The test: *would you want this on a machine where you never open that project?* Yes is global. No is project.
 
@@ -20,16 +20,37 @@ When the answer is genuinely unclear, choose project. It is scoped to one repo, 
 
 Both can be true without conflict: `node` at a sane default globally, and a specific version pinned by a project that needs it. The project's pin wins inside the project — that is what the pin is for, not a conflict to reconcile.
 
-### Project scope stops here
+### Project scope: two layers
+
+A project provisions itself in two layers, each owned by the one above it:
+
+- **Toolchain** — the interpreters, compilers and CLIs the project builds *with*: node, python, java, rust, terraform. Declared in the project's `mise.toml`, installed by mise.
+- **Dependencies** — the libraries the application imports. Declared in the manifest the toolchain already owns (`package.json`, `pyproject.toml`, `Cargo.toml`) and installed by that toolchain's own package manager.
+
+The line between them: a **toolchain** has to be on `PATH` before the project's package manager can run at all; a **dependency** is something that package manager installs. Do not promote a dependency into `mise.toml` to make it available — that puts the toolchain layer to work doing the dependency layer's job, and it breaks for anyone who builds the project without mise.
 
 ```bash
 cd /path/to/project
-mise use <tool>@<version>    # writes mise.toml (or the .mise.toml already there)
+mise use <tool>@<version>    # toolchain → mise.toml (or the .mise.toml already there)
+npm install <pkg>            # dependency → whatever manager the project already uses
 ```
 
-Commit that file to **the project's** repo. Nothing else in this skill applies — do not add it to `.chezmoidata/`.
+Commit those files to **the project's** repo. Nothing else in this skill applies — neither goes in `.chezmoidata/`.
 
-**Never `mise use --global`.** It writes `~/.config/mise/config.toml`, which chezmoi renders from `dot_config/mise/config.toml.tmpl`, so the edit is saved nowhere and the next apply replaces it. Global runtimes are changed in the source template instead (step 5).
+The split exists so that `git clone` is the only bespoke step: mise provisions the toolchain, the toolchain provisions the dependencies, and the project builds and tests with no environment configuration on top. That is also **why `mise` is in the global set** — it is the one globally-installed thing that makes every other repo self-provisioning, so bootstrapping it onto every machine is what buys the rest.
+
+### After a clone, "automatic" is two commands
+
+mise installs nothing on `cd` alone, and a config it has never seen is untrusted:
+
+```bash
+mise trust      # a freshly cloned mise.toml is untrusted
+mise install    # materialise the toolchain it declares
+```
+
+Skip either and it fails quietly rather than loudly: `cd` in, and the tool resolves to the machine's **system** copy at whatever version that happens to be — `/usr/bin/jq` where the project asked for `jq@1.7.1` — with no warning under the default `status.missing_tools`. A project that builds on one machine and not another is usually this.
+
+**Never `mise use --global`.** It writes `~/.config/mise/config.toml`, which chezmoi renders from `dot_config/mise/config.toml.tmpl`, so the edit is saved nowhere and the next apply replaces it. Global runtimes are changed in the source template instead (step 6).
 
 ## 2. Pick the mechanism
 
