@@ -1,33 +1,48 @@
 ---
 name: chezmoi-packages
-description: Packages on this machine are declared in chezmoi's data files and installed by its scripts, so a bare brew or apt install is recorded nowhere and reaches no other machine. Use when installing or removing a tool, upgrading a pinned one, or explaining why a tool is present on one machine and missing on another.
+description: Installing a tool is a scope decision before it is an install command - software wanted on every personal machine is declared in chezmoi's dotfiles repo, while a tool a single project depends on belongs to that project's mise config. Use when installing or removing a tool, upgrading a pinned one, or explaining why a tool is present on one machine and missing on another.
 ---
 
 # chezmoi packages
 
-Installing a package is a **declaration**, not a command: name it in the source repo, apply, and the install scripts converge every machine. `brew install` and `apt install` typed straight into a shell work exactly once, on one box, until it is rebuilt.
+Two questions, in order. **Where does this tool belong?** — most of the damage is done by getting this one wrong. Then, only for the tools that belong here, **which mechanism installs it?**
 
-Two data files hold every declaration, and both live in the source directory (`chezmoi source-path`):
+Neither answer is `brew install` typed into a shell. That works exactly once, on one box, until it is rebuilt.
 
-| File | Holds |
-| --- | --- |
-| `.chezmoidata/packages.toml` | everything a package manager installs — `packages.homebrew.*` on darwin, `packages.apt.*` on Debian-likes |
-| `.chezmoidata/packages.yaml` | `versions.<tool>` — pinned versions, and **only** for tools installed by downloading a release |
+## 1. Decide the scope
 
-Language runtimes and their tooling are not packages here: they live in `dot_config/mise/config.toml.tmpl`.
+- **Global** — software wanted on every personal machine: laptop, dev boxes, the lot. Editors, shells, `jq`, `ripgrep`, language runtimes used everywhere. These are declared in the dotfiles repo, and the rest of this skill is about them.
+- **Project** — a tool or dependency of one codebase: its linter, its formatter, its build tooling, the runtime version that codebase pins. These belong to **that repo**, not here.
 
-## 1. Pick the mechanism
+The test: *would you want this on a machine where you never open that project?* Yes is global. No is project.
 
-Work down this list and stop at the first that fits. The choice decides which file you edit.
+When the answer is genuinely unclear, choose project. It is scoped to one repo, it travels with the code to anyone who checks it out, and promoting it to global later is a two-line edit. A wrongly-global tool installs itself on every machine you own and is the harder one to walk back.
 
-1. **In the distro archive or a Homebrew formula** — add the name to the arrays in `packages.toml`. Nothing else.
-2. **Has an official apt repo** (docker, gh, tailscale, mise) — add the repo to `.chezmoiscripts/run_onchange_before_09-apt-repos.sh.tmpl` via `add_repo`, then list the package in the apt array like any other. apt then owns its upgrades, so it takes **no** pin in `packages.yaml`.
-3. **Release download only** (gron, herdr, rbw) — pin the version in `packages.yaml` and install it in a `run_onchange_after_2x` script, into `~/.local/bin` without sudo.
+Both can be true without conflict: `node` at a sane default globally, and a specific version pinned by a project that needs it. The project's pin wins inside the project — that is what the pin is for, not a conflict to reconcile.
+
+### Project scope stops here
+
+```bash
+cd /path/to/project
+mise use <tool>@<version>    # writes mise.toml (or the .mise.toml already there)
+```
+
+Commit that file to **the project's** repo. Nothing else in this skill applies — do not add it to `.chezmoidata/`.
+
+**Never `mise use --global`.** It writes `~/.config/mise/config.toml`, which chezmoi renders from `dot_config/mise/config.toml.tmpl`, so the edit is saved nowhere and the next apply replaces it. Global runtimes are changed in the source template instead (step 5).
+
+## 2. Pick the mechanism
+
+For global tools only. Work down this list and stop at the first that fits — the choice decides which file you edit. Both data files live in the source directory (`chezmoi source-path`).
+
+1. **In the distro archive or a Homebrew formula** — add the name to the arrays in `.chezmoidata/packages.toml`. Nothing else.
+2. **Has an official apt repo** (docker, gh, tailscale, mise) — add the repo to `.chezmoiscripts/run_onchange_before_09-apt-repos.sh.tmpl` via `add_repo`, then list the package in the apt array like any other. apt then owns its upgrades, so it takes **no** pin.
+3. **Release download only** (gron, herdr, rbw) — pin the version in `.chezmoidata/packages.yaml` and install it in a `run_onchange_after_2x` script, into `~/.local/bin` without sudo.
 4. **Self-updating installer** (claude) — a `run_once_` script guarded by `command -v`. Nothing to pin, because the tool updates itself.
 
-A pin in `packages.yaml` is a claim that nothing else upgrades the tool. Adding one for a package that apt or Homebrew already owns creates two things that both believe they control the version.
+`packages.toml` holds everything a package manager installs (`packages.homebrew.*` on darwin, `packages.apt.*` on Debian-likes). `packages.yaml` holds `versions.<tool>` and **only** for mechanism 3: a pin there is a claim that nothing else upgrades the tool, so adding one for an apt- or brew-managed package creates two things that both believe they control the version.
 
-## 2. Choose the machine class
+## 3. Choose the machine class
 
 Each manager's packages are split into three buckets, and a machine installs `common` plus whichever classes it is:
 
@@ -42,7 +57,7 @@ chezmoi data | jq '{dev_computer, personal_computer}'
 
 Homebrew arrays are `formulae` and `casks`; apt has a single `packages`.
 
-## 3. Apply
+## 4. Apply
 
 ```bash
 chezmoi status               # expect: R .chezmoiscripts/<the installer for this OS>
@@ -61,7 +76,7 @@ chezmoi state delete-bucket --bucket=scriptState
 
 That forces every `run_once_` and `run_onchange_` script to run again, not just the one you meant.
 
-## 4. Remove a package
+## 5. Remove a package
 
 Deleting a name from an array stops it being installed on **new** machines and uninstalls it from none. Removal is its own declaration:
 
@@ -71,10 +86,10 @@ Deleting a name from an array stops it being installed on **new** machines and u
 
 `to_remove` is a converged state rather than a one-shot, so an entry stays honoured on every machine that applies later. Leave it in place until every machine has applied, then clear it.
 
-## 5. Upgrade
+## 6. Upgrade
 
 - **Manager-owned** (arrays in `packages.toml`) — nothing here. `brew upgrade` and `apt upgrade` own it.
 - **Pinned** (`versions.<tool>` in `packages.yaml`) — edit the version string. That is the whole upgrade: the pin is interpolated into the install script, so the rendered content changes and the `run_onchange_` script re-runs on every machine that applies. This is the only reason `packages.yaml` exists.
-- **Language runtimes** — edit `dot_config/mise/config.toml.tmpl`. `run_onchange_after_30-mise-install` embeds a hash of that file, so editing it re-triggers `mise install`.
+- **Global runtimes** — edit `dot_config/mise/config.toml.tmpl` in the source directory. `run_onchange_after_30-mise-install` embeds a hash of that file, so editing it re-triggers `mise install`.
 
 Then commit the source, or the upgrade reaches this machine alone — see the `chezmoi-sync` skill.
