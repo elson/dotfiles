@@ -49,6 +49,8 @@ if command -v rbw-agent >/dev/null 2>&1 &&
 fi
 
 ### AWS CLI
+# No AWS_PROFILE: runpod is the only profile defined and its endpoint_url
+# redirects to RunPod's S3, so defaulting to it would send every unqualified
+# aws command there. Select it explicitly with --profile runpod.
 export AWS_CONFIG_FILE={{ .xdgConfigDir }}/aws/config
 export AWS_SHARED_CREDENTIALS_FILE={{ .xdgConfigDir }}/aws/credentials
-export AWS_PROFILE=runpod
