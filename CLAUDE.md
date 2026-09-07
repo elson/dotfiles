@@ -127,7 +127,8 @@ The scripts that need the distro codename or architecture read them from `/etc/o
 - `.chezmoiexternal.toml` — downloads antigen.zsh into `~/.local/scripts/`; `dot_zshrc.tmpl` sources it and defines the zsh plugin set.
 - `dot_config/shell/{aliases,exports}.sh.tmpl` — sourced by `.zshrc`; `exports.sh.tmpl` points AWS at `~/.config/aws` and sets `SSH_AUTH_SOCK` to `rbw-agent`'s socket (see "Secrets: Bitwarden" above).
 - `private_dot_ssh/config` — homelab hosts (Star Trek names → LAN IPs); public keys only in `private_keys/`.
-- `dot_agents/skills/` — agent skills, stored as real files and applied to `~/.agents/skills`. This is the single source of truth: `dot_claude/symlink_skills.tmpl` points `~/.claude/skills` at it, so Claude Code sees the same set. Add a skill under `dot_agents/skills/`, not under `~/.claude/skills`.
+- `dot_agents/skills/` — agent skills, stored as real files and applied to `~/.agents/skills`. This is the single source of truth: `dot_claude/symlink_skills.tmpl` points `~/.claude/skills` at it, so Claude Code sees the same set. Add a skill under `dot_agents/skills/`, not under `~/.claude/skills`. Most of them are a vendored copy of [`mattpocock/skills`](https://github.com/mattpocock/skills) — `dot_agents/dot_skill-lock.json` records each skill's origin and its `skillFolderHash`, which is the git tree hash of the skill's directory.
+- `.chezmoiremove` — targets to delete on apply. chezmoi leaves unmanaged files alone, so removing a source file does *not* remove the target it used to render; skills renamed or dropped upstream need naming here to clear them off every machine. Entries can be dropped once every machine has applied.
 
 ## Code Comments & Style
 

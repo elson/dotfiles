@@ -1,0 +1,19 @@
+# Skills removed or renamed upstream (mattpocock/skills v1.2.3). chezmoi leaves
+# unmanaged files in place, so the stale targets have to be named explicitly.
+# Safe to delete this file once every machine has applied once.
+.agents/skills/caveman
+.agents/skills/diagnose
+.agents/skills/prd-to-issues
+.agents/skills/to-issues
+.agents/skills/to-prd
+.agents/skills/write-a-prd
+.agents/skills/write-a-skill
+.agents/skills/zoom-out
+.agents/skills/grill-with-docs/ADR-FORMAT.md
+.agents/skills/grill-with-docs/CONTEXT-FORMAT.md
+.agents/skills/improve-codebase-architecture/DEEPENING.md
+.agents/skills/improve-codebase-architecture/INTERFACE-DESIGN.md
+.agents/skills/improve-codebase-architecture/LANGUAGE.md
+.agents/skills/tdd/deep-modules.md
+.agents/skills/tdd/interface-design.md
+.agents/skills/tdd/refactoring.md
