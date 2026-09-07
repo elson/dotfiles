@@ -12,3 +12,9 @@
 [settings]
     # configure `mise install` to always keep the downloaded archive
     always_keep_download = false # deleted after install by default
+
+    # The default, if_other_versions_installed, says nothing when mise holds no
+    # version of the tool at all - which is exactly a freshly cloned repo, where
+    # the pinned tool then silently resolves to the system copy at whatever
+    # version this box happens to have. Warn on every cd instead.
+    status.missing_tools = "always"

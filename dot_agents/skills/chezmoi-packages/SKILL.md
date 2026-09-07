@@ -35,7 +35,7 @@ mise use <tool>@<version>    # toolchain → mise.toml (or the .mise.toml alread
 npm install <pkg>            # dependency → whatever manager the project already uses
 ```
 
-Commit those files to **the project's** repo. Nothing else in this skill applies — neither goes in `.chezmoidata/`.
+Commit those files to **the project's** repo. Nothing else in this skill applies — neither goes in `.chezmoidata/`. The `mise-guide` skill covers mise itself in depth: tool versions, the `[env]` section, and the `[tasks]` runner.
 
 The split exists so that `git clone` is the only bespoke step: mise provisions the toolchain, the toolchain provisions the dependencies, and the project builds and tests with no environment configuration on top. That is also **why `mise` is in the global set** — it is the one globally-installed thing that makes every other repo self-provisioning, so bootstrapping it onto every machine is what buys the rest.
 
