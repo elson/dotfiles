@@ -82,12 +82,12 @@ Changing the hook stanza means existing machines need `chezmoi init` re-run to r
 
 ### Which mechanism for a new tool
 
-- **In the Debian archive** → add to the `packages.apt.*` array. Done.
-- **Has an official apt repo** (docker, gh, tailscale, mise) → add the repo to `run_onchange_before_09-apt-repos` via `add_repo`, then list the package in the apt array like any other. More maintainable than a vendor install script, and apt handles upgrades.
-- **Release download only** (gron, herdr, rbw) → pin it in `.chezmoidata/packages.yaml` and install it in a `run_onchange_after_2x` script, into `~/.local/bin` without sudo. The pin is what triggers the re-run. `rbw` is the exception that proves the rule: templates need it *before* any script runs, so the hook installs it too, and `after_21-rbw` exists only to move an already-installed box onto a bumped pin.
-- **Self-updating installer** (claude) → `run_once_`, guarded by `command -v`. Nothing to pin.
+The four-way choice (archive array / vendor apt repo / pinned release download / self-updating installer), which class bucket to use, and how removal and upgrades work are in `dot_agents/skills/chezmoi-packages/SKILL.md`, which is the single source of truth for all of it — written to be reachable from outside this repo, where the mistake of installing a package by hand actually happens.
 
-Keep these groups in separate scripts so an apt failure cannot block a download installer, and vice versa.
+Two constraints that live here because they are about this repo's layout rather than the workflow:
+
+- Keep the mechanism groups in separate scripts so an apt failure cannot block a download installer, and vice versa.
+- `rbw` is the exception that proves the pinning rule: templates need it *before* any script runs, so `.install-prerequisites.sh` installs it too, and `after_21-rbw` exists only to move an already-installed box onto a bumped pin.
 
 Shared bash helpers (`_inArray_`, `_debArch_`, `_versionStamp_`) live in `.chezmoitemplates/shared_script_utils.bash`, and the apt preamble (`SUDO` plus a locale-safe `apt_get`) in `.chezmoitemplates/debian_apt.bash`. Both are pulled in with `{{ template "<name>" . }}` — that's the only way to share code between scripts. Never write a literal `template` action for a file inside that same file, even in a comment: chezmoi executes it and recurses until it hits the template depth limit.
 
