@@ -37,7 +37,7 @@ Source filenames encode target attributes; renaming changes behaviour:
 
 Static data lives in `.chezmoidata/`, auto-merged into the template namespace:
 - `packages.toml` → `.packages.homebrew.{common,dev_computer,personal_computer}.{formulae,casks}` (darwin) and `.packages.apt.{common,dev_computer,personal_computer}.packages` (Debian-likes), each plus `to_remove`
-- `packages.yaml` → `.versions.<tool>` = pinned versions for the tools installed from a release download (`gron`, `herdr`, `rbw`). Nothing else belongs here: apt owns upgrades for repo-backed packages, and `claude` self-updates.
+- `packages.yaml` → `.versions.<tool>` = pinned versions for the tools installed from a release download. `rbw` is the only one left: apt owns upgrades for repo-backed packages, `claude` self-updates, and `gron`/`herdr` are mise `[tools]`.
 - `bitwarden.toml` → `.bitwarden.items.<name>` = Bitwarden item UUIDs
 
 ## Secrets: Bitwarden
@@ -62,7 +62,7 @@ Scripts with a `before_`/`after_` prefix run in those phases; a plain `run_once_
 1. `run_onchange_before_09-apt-repos` (Debian) — add the mise / gh / docker / tailscale apt repos
 2. `run_onchange_before_10-homebrew-packages` (darwin) / `run_onchange_before_11-apt-packages` (Debian) — install the enabled machine classes' packages; the darwin one skips casks when `is_ci_workflow`
 3. (files applied)
-4. `run_onchange_after_10_remove_packages` (both OSes), `run_onchange_after_20-release-tools` + `run_onchange_after_21-rbw` (Debian), `run_once_after_22-claude-code` (both), `run_onchange_after_30-mise-install` (dev machines that have `mise`)
+4. `run_onchange_after_10_remove_packages` (both OSes), `run_onchange_after_21-rbw` (Debian), `run_once_after_22-claude-code` (both), `run_onchange_after_30-mise-install` (any machine that has `mise`, which is now every machine)
 5. **`.chezmoi-summary.sh`** — another hook, on `hooks.apply.post`. Prints the completion banner and, when the session predates the apply, how to pick up the new login shell and PATH.
 
 ### The prerequisites hook
@@ -88,8 +88,9 @@ Two constraints that live here because they are about this repo's layout rather 
 
 - Keep the mechanism groups in separate scripts so an apt failure cannot block a download installer, and vice versa.
 - `rbw` is the exception that proves the pinning rule: templates need it *before* any script runs, so `.install-prerequisites.sh` installs it too, and `after_21-rbw` exists only to move an already-installed box onto a bumped pin.
+- `mise` is a *common* package on both OSes, not a `dev_computer` one, because it owns `gron` and `herdr` — tools with no apt package that every machine gets. The language toolchains in `dot_config/mise/config.toml.tmpl` stay gated on `dev_computer`, so a headless box installs the two CLI tools and nothing else.
 
-Shared bash helpers (`_inArray_`, `_debArch_`, `_versionStamp_`) live in `.chezmoitemplates/shared_script_utils.bash`, and the apt preamble (`SUDO` plus a locale-safe `apt_get`) in `.chezmoitemplates/debian_apt.bash`. Both are pulled in with `{{ template "<name>" . }}` — that's the only way to share code between scripts. Never write a literal `template` action for a file inside that same file, even in a comment: chezmoi executes it and recurses until it hits the template depth limit.
+Shared bash helpers (`_inArray_`) live in `.chezmoitemplates/shared_script_utils.bash`, and the apt preamble (`SUDO` plus a locale-safe `apt_get`) in `.chezmoitemplates/debian_apt.bash`. Both are pulled in with `{{ template "<name>" . }}` — that's the only way to share code between scripts. Never write a literal `template` action for a file inside that same file, even in a comment: chezmoi executes it and recurses until it hits the template depth limit.
 
 `run_onchange_*` scripts rerun when their *rendered* content changes. `30-mise-install` therefore embeds a hash comment (`{{ include "dot_config/mise/config.toml.tmpl" | sha256sum }}`) so editing the mise config retriggers `mise install`. Use the same trick when a script must react to a data file it doesn't otherwise interpolate.
 
