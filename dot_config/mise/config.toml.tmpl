@@ -1,4 +1,11 @@
 [tools]
+    # CLI tools with no apt package at all. Every machine gets these, which is
+    # why mise itself is in the common package set rather than dev_computer.
+    gron  = 'latest' # JSON flattener
+    herdr = 'latest' # Agent multiplexer
+
+{{- if .dev_computer }}
+
     # languages
     node = 'lts'
     python = '3'
@@ -8,6 +15,7 @@
 
     # npm-installed tools
     "npm:@earendil-works/pi-coding-agent" = "latest" # pi coding agent, https://pi.dev
+{{- end }}
 
 [settings]
     # configure `mise install` to always keep the downloaded archive

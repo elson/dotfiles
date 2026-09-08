@@ -1,5 +1,7 @@
 [packages.homebrew]
-to_remove = []
+# gron and herdr moved to mise's [tools]; shed the Homebrew copies so they
+# cannot shadow the mise-managed ones. Droppable once every Mac has applied.
+to_remove = ["gron", "herdr"]
 
 # Not managed here on purpose:
 #   chezmoi - installed by the bootstrap install script before this repo exists
@@ -11,8 +13,8 @@ formulae = [
 "fzf",
 "git",
 "gpg",
-"gron",
 "jq",
+"mise",     # tool manager; common because it owns gron/herdr everywhere
 "openssl",  # SSL/TLS cryptography
 "starship", # Shell prompt
 "rbw",      # Bitwarden client backing every secret template
@@ -44,11 +46,9 @@ formulae = []
 [packages.homebrew.dev_computer]
 casks = ["bruno", "visual-studio-code"]
 formulae = [
-"mise",
 "gh",
-"tmux",  # Terminal multiplexer
-"herdr", # Agent multiplexer
-"mosh",  # SSH over flaky links; needs mosh-server on the far end too
+"tmux", # Terminal multiplexer
+"mosh", # SSH over flaky links; needs mosh-server on the far end too
 ]
 
 # ---------------------------------------------------------------------------
@@ -58,11 +58,12 @@ formulae = [
 # repo added by run_onchange_before_09-apt-repos. Repo-backed entries are marked;
 # they only resolve after that script has run.
 #
-# Tools with no apt package at all are installed from a pinned release by
-# run_onchange_after_20-release-tools (gron, herdr); versions live in
-# packages.yaml. rbw is the exception: absent from Debian stable, and needed
-# before chezmoi reads the source state, so .install-prerequisites.sh installs
-# it and run_onchange_after_21-rbw only converges it after a pin bump.
+# Tools with no apt package at all (gron, herdr) are installed by mise from
+# [tools] in dot_config/mise/config.toml.tmpl — which is why mise itself is a
+# common package here rather than a dev_computer one. rbw is the exception: it
+# has no apt package either, but it is needed before chezmoi reads the source
+# state — earlier than any script, mise included — so .install-prerequisites.sh
+# installs it and run_onchange_after_21-rbw only converges it after a pin bump.
 #
 # ---------------------------------------------------------------------------
 
@@ -79,6 +80,7 @@ packages = [
 "jq",
 "lftp",
 "locales",         # so the en_US.UTF-8 that SSH forwards from the Mac exists here
+"mise",            # vendor repo: mise.jdx.dev; common because it owns gron/herdr everywhere
 "openssl",         # SSL/TLS cryptography
 "pinentry-tty",    # rbw's master password prompt; curses has issues with ssh sessions 
 "starship",        # Shell prompt
@@ -104,7 +106,6 @@ packages = [
 "tmux",            # Terminal multiplexer
 "mosh",            # client and server in one package; only dev boxes are moshable
 "gh",              # vendor repo: cli.github.com
-"mise",            # vendor repo: mise.jdx.dev
 ]
 
 # Linux boxes are headless; GUI apps are darwin-only.
