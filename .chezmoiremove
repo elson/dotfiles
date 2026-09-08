@@ -17,12 +17,3 @@
 .agents/skills/tdd/deep-modules.md
 .agents/skills/tdd/interface-design.md
 .agents/skills/tdd/refactoring.md
-
-# gron and herdr moved from a pinned release download to mise's [tools].
-# ~/.local/bin is prepended to PATH, so the old binaries would shadow the
-# mise-managed ones. Their version stamps go too, since nothing writes them
-# any more. Droppable once every Debian box has applied.
-.local/bin/gron
-.local/bin/herdr
-.local/state/dotfiles/versions/gron
-.local/state/dotfiles/versions/herdr

@@ -1,7 +1,5 @@
 [packages.homebrew]
-# gron and herdr moved to mise's [tools]; shed the Homebrew copies so they
-# cannot shadow the mise-managed ones. Droppable once every Mac has applied.
-to_remove = ["gron", "herdr"]
+to_remove = []
 
 # Not managed here on purpose:
 #   chezmoi - installed by the bootstrap install script before this repo exists
