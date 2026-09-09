@@ -1,6 +1,6 @@
 ---
 name: chezmoi-packages
-description: Installing a tool is a scope decision before it is an install command - software wanted on every personal machine is declared in chezmoi's dotfiles repo, while a tool a single project depends on belongs to that project's mise config. Use when installing or removing a tool, upgrading a pinned one, or explaining why a tool is present on one machine and missing on another.
+description: Installing a tool is a scope decision before it is an install command - software wanted on every personal machine is declared in chezmoi's dotfiles repo, while a tool a single project depends on belongs to that project's mise config. Use when installing or removing a tool, upgrading a pinned one, or explaining why a tool is present on one machine and missing, or at a different version, on another.
 ---
 
 # chezmoi packages
@@ -58,10 +58,11 @@ For global tools only. Work down this list and stop at the first that fits — t
 
 1. **In the distro archive or a Homebrew formula** — add the name to the arrays in `.chezmoidata/packages.toml`. Nothing else.
 2. **Has an official apt repo** (docker, gh, tailscale, mise) — add the repo to `.chezmoiscripts/run_onchange_before_09-apt-repos.sh.tmpl` via `add_repo`, then list the package in the apt array like any other. apt then owns its upgrades, so it takes **no** pin.
-3. **Release download only** (gron, herdr, rbw) — pin the version in `.chezmoidata/packages.yaml` and install it in a `run_onchange_after_2x` script, into `~/.local/bin` without sudo.
-4. **Self-updating installer** (claude) — a `run_once_` script guarded by `command -v`. Nothing to pin, because the tool updates itself.
+3. **A mise backend has it** (gron, herdr) — add it to `[tools]` in `dot_config/mise/config.toml.tmpl`. Cross-platform in one declaration, which is why these two moved off mechanism 4. Pin an exact version, not `latest` — see step 6.
+4. **Release download only** (rbw) — pin the version in `.chezmoidata/packages.yaml` and install it in a `run_onchange_after_2x` script, into `~/.local/bin` without sudo.
+5. **Self-updating installer** (claude) — a `run_once_` script guarded by `command -v`. Nothing to pin, because the tool updates itself.
 
-`packages.toml` holds everything a package manager installs (`packages.homebrew.*` on darwin, `packages.apt.*` on Debian-likes). `packages.yaml` holds `versions.<tool>` and **only** for mechanism 3: a pin there is a claim that nothing else upgrades the tool, so adding one for an apt- or brew-managed package creates two things that both believe they control the version.
+`packages.toml` holds everything a package manager installs (`packages.homebrew.*` on darwin, `packages.apt.*` on Debian-likes). `packages.yaml` holds `versions.<tool>` and **only** for mechanism 4: a pin there is a claim that nothing else upgrades the tool, so adding one for an apt- or brew-managed package creates two things that both believe they control the version.
 
 ## 3. Choose the machine class
 
@@ -111,6 +112,18 @@ Deleting a name from an array stops it being installed on **new** machines and u
 
 - **Manager-owned** (arrays in `packages.toml`) — nothing here. `brew upgrade` and `apt upgrade` own it.
 - **Pinned** (`versions.<tool>` in `packages.yaml`) — edit the version string. That is the whole upgrade: the pin is interpolated into the install script, so the rendered content changes and the `run_onchange_` script re-runs on every machine that applies. This is the only reason `packages.yaml` exists.
-- **Global runtimes** — edit `dot_config/mise/config.toml.tmpl` in the source directory. `run_onchange_after_30-mise-install` embeds a hash of that file, so editing it re-triggers `mise install`.
+- **Global mise tools** — edit `dot_config/mise/config.toml.tmpl` in the source directory. `run_onchange_after_30-mise-install` embeds a hash of that file, so editing it re-triggers `mise install`. That works for an **exact** version and only for an exact version, per the trap below.
+
+### A floating mise version drifts per machine
+
+`latest`, `lts` and `3` are resolved **once**, when the tool is first installed, and then frozen — `installs/herdr/latest` is a symlink to whatever was current that day. `mise install` only fills gaps, so it never re-resolves one that is already satisfied, and the apply script's hash never changes because the version string never changes. Two machines that first installed a tool months apart therefore sit on different versions indefinitely, with `chezmoi diff` clean on both:
+
+```bash
+mise ls <tool>              # what this machine froze
+mise latest <tool>          # what the string resolves to today
+mise upgrade <tool>         # re-resolve it, this machine only
+```
+
+`mise upgrade` is a per-machine repair, not a fix — the next machine drifts the same way. Converge them by pinning an exact version in the template: the rendered content then changes, the `run_onchange_` fires everywhere, and every machine lands on the same version. Keep a floating string only where the drift is the point (the `dev_computer` language runtimes deliberately track `lts` / a major).
 
 Then commit the source, or the upgrade reaches this machine alone — see the `chezmoi-sync` skill.
