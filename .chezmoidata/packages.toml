@@ -25,6 +25,8 @@ formulae = [
 [packages.homebrew.personal_computer]
 casks = [
 "zen",
+"firefox",
+"google-chrome",
 "protonvpn",
 "docker-desktop",
 "google-drive",
@@ -32,19 +34,31 @@ casks = [
 "netbirdio/tap/netbird-ui",
 "obsidian",
 "raycast",
+"rcloneview",
 "slack",
 "spotify",
 "syncthing-app",
 "tailscale-app",
+"veracrypt",  # pulls in macfuse as a cask dependency
+"vlc",
 "xnviewmp",
 "zoom",
 ]
-formulae = []
+formulae = [
+"gallery-dl",
+"rclone",
+]
 
 [packages.homebrew.dev_computer]
 casks = ["bruno", "visual-studio-code"]
 formulae = [
+"awscli",
+"biome", # the global VS Code default formatter
 "gh",
+"pnpm",  # not a mise tool: pnpm 12 ships no darwin/amd64 binary, so only brew's source build runs on the Intel Mac
+"peak/tap/s5cmd",             # fast S3 client for the runpod buckets
+"runpod/runpodctl/runpodctl",
+"rtk",   # token-saving CLI proxy that the Claude Code hook routes shell commands through
 "tmux", # Terminal multiplexer
 "mosh", # SSH over flaky links; needs mosh-server on the far end too
 ]
