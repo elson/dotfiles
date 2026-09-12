@@ -25,6 +25,21 @@ fi
 # exists. With IdentitiesOnly yes and no private key on disk, ssh has no fallback, so
 # that is a password prompt on every host. Hence: keep the forwarded socket only while
 # it is a live socket, and otherwise fall back to rbw-agent's, same as off-SSH.
+#
+# That check only runs when a shell starts, though, and herdr keeps shells alive across
+# SSH sessions: a pane opened during Monday's login still names Monday's socket on
+# Wednesday, and so does every process started from it — including claude, whose
+# ssh-launched MCP server then falls through to a password prompt on the tty it is
+# drawing its TUI on. So each login points a fixed symlink at its forwarded socket and
+# shells export the symlink instead, which keeps following whichever login is current.
+if [ -n "${SSH_CONNECTION:-}" ]; then
+    _fwd_sock="${HOME}/.ssh/agent-forwarded.sock"
+    if [ -S "${SSH_AUTH_SOCK:-}" ] && [ "${SSH_AUTH_SOCK}" != "${_fwd_sock}" ]; then
+        ln -sfn "${SSH_AUTH_SOCK}" "${_fwd_sock}"
+    fi
+    [ ! -S "${_fwd_sock}" ] || export SSH_AUTH_SOCK="${_fwd_sock}"
+    unset _fwd_sock
+fi
 if command -v rbw-agent >/dev/null 2>&1 &&
    { [ -z "${SSH_CONNECTION:-}" ] || [ ! -S "${SSH_AUTH_SOCK:-}" ]; }; then
     # Mirrors runtime_dir() in rbw's src/dirs.rs: XDG_RUNTIME_DIR when the platform

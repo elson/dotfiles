@@ -54,6 +54,8 @@ Both halves of that matter. `~/.ssh/config` sets `IdentitiesOnly yes` with a *pu
 
 Inside an SSH session (`$SSH_CONNECTION` set) a *live* forwarded socket wins and the block is skipped: `ForwardAgent yes` applies to every host in `~/.ssh/config` and this file is applied on the Debian boxes too, so overriding `SSH_AUTH_SOCK` there would swap the forwarded keys the session arrived with for whatever the remote box's own vault holds. But a forwarded socket dies with the sshd that created it, so anything outliving one session — tmux, a reattached screen, a daemon — ends up with `SSH_AUTH_SOCK` naming a path that no longer exists, and (again: `IdentitiesOnly yes`, no private key on disk) every ssh falls through to a password prompt. So the skip is conditional on `[ -S "$SSH_AUTH_SOCK" ]`: a dead forward falls back to `rbw-agent` exactly as an off-SSH shell does.
 
+That check runs only at shell startup, and herdr panes outlive the login that opened them, so a pane — and any `claude` started in it, whose `ssh`-launched MCP server then prompts for a password over the TUI — would keep naming a socket that died days ago. So every SSH shell repoints `~/.ssh/agent-forwarded.sock` at its own live forward and exports that symlink instead; long-lived shells follow whichever login is current.
+
 ## Script ordering on a fresh machine
 
 Scripts with a `before_`/`after_` prefix run in those phases; a plain `run_once_NN` runs in the file phase, *between* them. Nothing in `.chezmoiscripts/` runs early enough to install a prerequisite that templates or `before_` scripts need — that job belongs to the hook in step 0.
