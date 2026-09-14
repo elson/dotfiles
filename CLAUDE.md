@@ -37,7 +37,7 @@ Source filenames encode target attributes; renaming changes behaviour:
 
 Static data lives in `.chezmoidata/`, auto-merged into the template namespace:
 - `packages.toml` → `.packages.homebrew.{common,dev_computer,personal_computer}.{formulae,casks}` (darwin) and `.packages.apt.{common,dev_computer,personal_computer}.packages` (Debian-likes), each plus `to_remove`
-- `packages.yaml` → `.versions.<tool>` = pinned versions for the tools installed from a release download. `rbw` is the only one left: apt owns upgrades for repo-backed packages, `claude` self-updates, and `gron`/`herdr` are mise `[tools]`.
+- `packages.yaml` → `.versions.<tool>` = pinned versions for the tools installed from a release download. `rbw` is the only one left: apt owns upgrades for repo-backed packages, `claude` and `mise` self-update, and `gron`/`herdr` are mise `[tools]`.
 - `bitwarden.toml` → `.bitwarden.items.<name>` = Bitwarden item UUIDs
 
 ## Secrets: Bitwarden
@@ -61,10 +61,10 @@ That check runs only at shell startup, and herdr panes outlive the login that op
 Scripts with a `before_`/`after_` prefix run in those phases; a plain `run_once_NN` runs in the file phase, *between* them. Nothing in `.chezmoiscripts/` runs early enough to install a prerequisite that templates or `before_` scripts need — that job belongs to the hook in step 0.
 
 0. **`.install-prerequisites.sh`** — not a script target at all. It is wired to `hooks.read-source-state.pre` in `.chezmoi.toml.tmpl`, so chezmoi runs it *before reading the source state*: earlier than any `run_` script and before any `rbwFields` template is rendered. Installs Xcode CLT + Homebrew (darwin), the apt basics (Debian), and `rbw` when `use_secrets` — then unlocks the rbw agent. See "The prerequisites hook" below.
-1. `run_onchange_before_09-apt-repos` (Debian) — add the mise / gh / docker / tailscale apt repos
+1. `run_onchange_before_09-apt-repos` (Debian) — add the gh / docker / tailscale apt repos
 2. `run_onchange_before_10-homebrew-packages` (darwin) / `run_onchange_before_11-apt-packages` (Debian) — install the enabled machine classes' packages; the darwin one skips casks when `is_ci_workflow`
 3. (files applied)
-4. `run_onchange_after_10_remove_packages` (both OSes), `run_onchange_after_21-rbw` (Debian), `run_once_after_22-claude-code` (both), `run_onchange_after_30-mise-install` (any machine that has `mise`, which is now every machine)
+4. `run_onchange_after_10_remove_packages` (both OSes), `run_onchange_after_21-rbw` (Debian), `run_once_after_22-claude-code` (both), `run_once_after_23-mise` (both), `run_onchange_after_30-mise-install` (every machine)
 5. **`.chezmoi-summary.sh`** — another hook, on `hooks.apply.post`. Prints the completion banner and, when the session predates the apply, how to pick up the new login shell and PATH.
 
 ### The prerequisites hook
@@ -90,7 +90,8 @@ Two constraints that live here because they are about this repo's layout rather 
 
 - Keep the mechanism groups in separate scripts so an apt failure cannot block a download installer, and vice versa.
 - `rbw` is the exception that proves the pinning rule: templates need it *before* any script runs, so `.install-prerequisites.sh` installs it too, and `after_21-rbw` exists only to move an already-installed box onto a bumped pin.
-- `mise` is a *common* package on both OSes, not a `dev_computer` one, because it owns `gron` and `herdr` — tools with no apt package that every machine gets. The language toolchains in `dot_config/mise/config.toml.tmpl` stay gated on `dev_computer`, so a headless box installs the two CLI tools and nothing else.
+- `mise` goes on *every* machine, not just `dev_computer` ones, because it owns `gron` and `herdr` — tools with no apt package that every machine gets. The language toolchains in `dot_config/mise/config.toml.tmpl` stay gated on `dev_computer`, so a headless box installs the two CLI tools and nothing else.
+- `mise` is in neither package array: `run_once_after_23-mise` installs it from `curl https://mise.run | sh`, upstream's preferred method, because brew and apt build it themselves — slower, larger, and with self-update disabled by the packager. `auto_update = true` in the mise config then owns upgrades, which is why it takes no pin either. Both scripts that call it (`after_23`, `after_30`) prepend `~/.local/bin` to `PATH` and guard on a *runtime* `command -v`: a template-time `lookPath` renders before any script runs, so on a fresh machine it would see no mise and skip the tool install until a second apply.
 
 Shared bash helpers (`_inArray_`) live in `.chezmoitemplates/shared_script_utils.bash`, and the apt preamble (`SUDO` plus a locale-safe `apt_get`) in `.chezmoitemplates/debian_apt.bash`. Both are pulled in with `{{ template "<name>" . }}` — that's the only way to share code between scripts. Never write a literal `template` action for a file inside that same file, even in a comment: chezmoi executes it and recurses until it hits the template depth limit.
 

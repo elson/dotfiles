@@ -1,9 +1,19 @@
-{{- if lookPath "mise" -}}
 #!/usr/bin/env bash
 
 # hash of the mise config file, used to determine if we need to rerun this script
 # mise/config.toml.tmpl hash: {{ include "dot_config/mise/config.toml.tmpl" | sha256sum }}
 
-mise install -y
+# The guard is a runtime `command -v`, not a template-time `lookPath`: templates
+# render before any script runs, so on a fresh machine after_23 has not installed
+# mise yet and a lookPath guard would render this script empty — costing a second
+# apply. PATH is extended for the same reason; ~/.local/bin is only on the PATH
+# of a shell that has sourced exports.sh, which a first apply's has not.
 
-{{- end }}
+export PATH="{{ .chezmoi.homeDir }}/.local/bin:${PATH}"
+
+if ! command -v mise &>/dev/null; then
+    echo "⏭  mise not on PATH; skipping tool install" >&2
+    exit 0
+fi
+
+mise install -y

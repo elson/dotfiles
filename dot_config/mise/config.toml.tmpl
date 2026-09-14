@@ -18,6 +18,11 @@
 {{- end }}
 
 [settings]
+    # mise installs itself from mise.run rather than brew/apt, so nothing else
+    # upgrades it — it checks for a newer release itself before network-using
+    # commands. Skipped automatically in CI and non-interactive sessions.
+    auto_update = true
+
     # configure `mise install` to always keep the downloaded archive
     always_keep_download = false # deleted after install by default
 

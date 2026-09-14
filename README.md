@@ -69,7 +69,7 @@ and `true`/`false`); they are stored as TOML `true`/`false`:
 |---|---|---|
 | Use secrets from Bitwarden? | `use_secrets` | `~/.config/aws/credentials`, `~/.config/shell/private.sh`, and the `rbw` install + unlock in the prerequisites hook. `false` makes those targets disappear via `.chezmoiignore`. |
 | Is this a personal computer for daily driving? | `personal_computer` | GUI apps — browsers, Slack, Obsidian, Docker Desktop, Tailscale (darwin only; the Linux boxes are headless). |
-| Do you do development on this computer? | `dev_computer` | mise, gh, Claude Code, and the `mise install` run. |
+| Do you do development on this computer? | `dev_computer` | gh, Claude Code, and the language toolchains in the mise config (mise itself goes on every machine). |
 | Email address | `email` | Git identity and the Bitwarden login. |
 
 To change an answer later, edit `~/.config/chezmoi/chezmoi.toml` directly or re-run
@@ -83,14 +83,15 @@ the file phase, then `after_` scripts:
 0. **`.install-prerequisites.sh`** — Xcode CLT + Homebrew (macOS), `curl`/`git`/`gnupg`/
    `unzip` (Debian), and `rbw`, which it then unlocks. Runs before chezmoi even reads the
    repo, so the secret templates have a live vault by the time they render.
-1. **`before_09-apt-repos`** *(Debian)* — adds the mise, GitHub CLI, Docker, and
+1. **`before_09-apt-repos`** *(Debian)* — adds the GitHub CLI, Docker, and
    Tailscale apt repos, skipping any that don't publish for the box's codename.
 2. **`before_10-homebrew-packages`** *(darwin)* / **`before_11-apt-packages`** *(Debian)* —
    installs the enabled machine classes' packages.
 3. **files applied** — templates rendered into `$HOME`.
-4. **`after_10_remove_packages`**, **`after_20-release-tools`** (gron, herdr),
-   **`after_21-rbw`**, **`after_22-claude-code`**, **`after_30-mise-install`**,
-   **`after_40-default-shell`** *(Debian)* — makes zsh the login shell.
+4. **`after_10_remove_packages`**, **`after_21-rbw`** *(Debian)*,
+   **`after_22-claude-code`**, **`after_23-mise`**, **`after_30-mise-install`**
+   (gron, herdr and the language toolchains), **`after_40-default-shell`**
+   *(Debian)* — makes zsh the login shell.
 5. **`.chezmoi-summary.sh`** — prints the completion banner, and how to pick up the new
    shell and PATH when the session predates the apply.
 
@@ -101,7 +102,7 @@ the file phase, then `after_` scripts:
 | `~/.zshrc`, `~/.config/shell/{aliases,exports,private}.sh` | zsh plus antigen, downloaded as an external |
 | `~/.config/git/config` | identity from the `email` prompt |
 | `~/.config/ghostty/config` | terminal, darwin |
-| `~/.config/mise/config.toml` | dev machines; editing it re-triggers `mise install` |
+| `~/.config/mise/config.toml` | every machine; editing it re-triggers `mise install` |
 | `~/.config/aws/`, `~/.aws` → symlink | `credentials` rendered from Bitwarden |
 | `~/.ssh/config`, `~/.ssh/keys/*.pub` | homelab hosts; public keys only |
 | `~/.agents/skills/`, `~/.claude/skills` → symlink | agent skills; `~/.agents/skills` is the source of truth |
@@ -109,15 +110,16 @@ the file phase, then `after_` scripts:
 ## Packages
 
 Package lists live in [`.chezmoidata/packages.toml`](.chezmoidata/packages.toml), split by
-machine class. Three install mechanisms, deliberately kept in separate scripts so a
+machine class. Several install mechanisms, deliberately kept in separate scripts so a
 failure in one can't block the others:
 
 | Situation | Mechanism |
 |---|---|
 | In the Debian archive / a Homebrew formula | add to the `packages.apt.*` or `packages.homebrew.*` array |
-| Has an official apt repo (docker, gh, tailscale, mise) | add the repo to `before_09-apt-repos`, then list the package in the apt array — apt then owns upgrades |
-| Release download only (gron, herdr, rbw) | pin the version in [`.chezmoidata/packages.yaml`](.chezmoidata/packages.yaml) and install it in an `after_2x` script; bumping the pin is what re-runs it |
-| Self-updating installer (claude) | `run_once_`, guarded by `command -v` |
+| Has an official apt repo (docker, gh, tailscale) | add the repo to `before_09-apt-repos`, then list the package in the apt array — apt then owns upgrades |
+| A mise backend has it (gron, herdr) | add it to `[tools]` in `dot_config/mise/config.toml.tmpl` |
+| Release download only (rbw) | pin the version in [`.chezmoidata/packages.yaml`](.chezmoidata/packages.yaml) and install it in an `after_2x` script; bumping the pin is what re-runs it |
+| Self-updating installer (claude, mise) | `run_once_`, guarded by `command -v` |
 
 Not managed on purpose: **chezmoi** (installed by the bootstrap command above, before this
 repo exists) and **awscli** (use the official installer where it's needed).

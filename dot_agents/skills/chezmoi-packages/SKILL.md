@@ -57,10 +57,10 @@ Skip either and it fails quietly rather than loudly: `cd` in, and the tool resol
 For global tools only. Work down this list and stop at the first that fits — the choice decides which file you edit. Both data files live in the source directory (`chezmoi source-path`).
 
 1. **In the distro archive or a Homebrew formula** — add the name to the arrays in `.chezmoidata/packages.toml`. Nothing else.
-2. **Has an official apt repo** (docker, gh, tailscale, mise) — add the repo to `.chezmoiscripts/run_onchange_before_09-apt-repos.sh.tmpl` via `add_repo`, then list the package in the apt array like any other. apt then owns its upgrades, so it takes **no** pin.
+2. **Has an official apt repo** (docker, gh, tailscale) — add the repo to `.chezmoiscripts/run_onchange_before_09-apt-repos.sh.tmpl` via `add_repo`, then list the package in the apt array like any other. apt then owns its upgrades, so it takes **no** pin.
 3. **A mise backend has it** (gron, herdr) — add it to `[tools]` in `dot_config/mise/config.toml.tmpl`. Cross-platform in one declaration, which is why these two moved off mechanism 4. Pin an exact version, not `latest` — see step 6.
 4. **Release download only** (rbw) — pin the version in `.chezmoidata/packages.yaml` and install it in a `run_onchange_after_2x` script, into `~/.local/bin` without sudo.
-5. **Self-updating installer** (claude) — a `run_once_` script guarded by `command -v`. Nothing to pin, because the tool updates itself.
+5. **Self-updating installer** (claude, mise) — a `run_once_` script guarded by `command -v`. Nothing to pin, because the tool updates itself. Prefer this over 1 or 2 where upstream says so: mise moved off brew/apt precisely because those packagers build their own binary and disable its self-update, and `mise.run` + `auto_update = true` is what keeps `mise bootstrap` and the rest current.
 
 `packages.toml` holds everything a package manager installs (`packages.homebrew.*` on darwin, `packages.apt.*` on Debian-likes). `packages.yaml` holds `versions.<tool>` and **only** for mechanism 4: a pin there is a claim that nothing else upgrades the tool, so adding one for an apt- or brew-managed package creates two things that both believe they control the version.
 

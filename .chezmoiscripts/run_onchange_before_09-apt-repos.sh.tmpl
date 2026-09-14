@@ -87,12 +87,27 @@ add_repo() {
     fi
 }
 
-# mise — publishes a single "stable" suite for all distros
-add_repo mise \
-    "https://mise.jdx.dev/gpg-key.pub" armored \
-    "https://mise.jdx.dev/deb" stable main
+remove_repo() {
+    # DESC: Drop a vendor repo this machine no longer takes packages from, so
+    #       apt-get update stops fetching a suite nothing installs from.
+    # ARGS: $1 name
+    local name="$1"
+    local keyring="/etc/apt/keyrings/${name}.gpg"
+    local list="/etc/apt/sources.list.d/${name}.list"
 
-# gh — also a single "stable" suite; key is already dearmored
+    if [[ -f ${list} || -f ${keyring} ]]; then
+        echo "🗑  ${name}: dropping vendor repo"
+        ${SUDO} rm -f "${list}" "${keyring}"
+        changed=1
+    fi
+}
+
+# mise moved to the official mise.run installer (run_once_after_23-mise), which
+# is the upstream-preferred build and can self-update; apt's could not. Drop this
+# line once every Debian box has applied.
+remove_repo mise
+
+# gh — a single "stable" suite for all distros; key is already dearmored
 add_repo github-cli \
     "https://cli.github.com/packages/githubcli-archive-keyring.gpg" binary \
     "https://cli.github.com/packages" stable main

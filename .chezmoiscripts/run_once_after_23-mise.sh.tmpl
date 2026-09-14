@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+
+# mise, via the official mise.run installer on both macOS and Linux. That is the
+# upstream-preferred method: it drops the optimised release binary at
+# ~/.local/bin/mise, where brew and apt build their own — slower, larger, and
+# with self-update disabled by the packager. Installing it the same way on both
+# OSes is also what makes `mise bootstrap` usable ad hoc.
+#
+# run_once_ rather than run_onchange_: `auto_update = true` in
+# dot_config/mise/config.toml.tmpl keeps it current, so there is no version to
+# pin and nothing to re-run. Delete the script's entry with
+# `chezmoi state delete-bucket --bucket=scriptState` to force a reinstall.
+#
+# after_23 rather than before_: after_10_remove_packages uninstalls the brew/apt
+# mise first, so the installer lands on a box with only one mise on it, and
+# after_30-mise-install still runs later to materialise [tools].
+
+set -eo pipefail
+
+export PATH="{{ .chezmoi.homeDir }}/.local/bin:${PATH}"
+
+if command -v mise &>/dev/null; then
+    echo "✅  mise already installed ($(command -v mise))"
+    exit 0
+fi
+
+if ! command -v curl &>/dev/null; then
+    echo "curl not found — install it and re-apply" >&2
+    exit 1
+fi
+
+echo "⬇️   Installing mise"
+curl -fsSL --max-time 300 https://mise.run | sh

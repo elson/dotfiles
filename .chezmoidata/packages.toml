@@ -1,8 +1,12 @@
 [packages.homebrew]
-to_remove = []
+# mise moved to the official mise.run installer (run_once_after_23-mise), which
+# ships the optimised release binary and can self-update; the brew formula is a
+# separate, slower build that cannot. Drop this entry once every mac has applied.
+to_remove = ["mise"]
 
 # Not managed here on purpose:
 #   chezmoi - installed by the bootstrap install script before this repo exists
+#   mise    - installed by run_once_after_23-mise from mise.run on both OSes
 
 [packages.homebrew.common]
 casks = ["bitwarden", "ghostty"]
@@ -12,7 +16,6 @@ formulae = [
 "git",
 "gpg",
 "jq",
-"mise",     # tool manager; common because it owns gron/herdr everywhere
 "openssl",  # SSL/TLS cryptography
 "starship", # Shell prompt
 "rbw",      # Bitwarden client backing every secret template
@@ -71,16 +74,20 @@ formulae = [
 # they only resolve after that script has run.
 #
 # Tools with no apt package at all (gron, herdr) are installed by mise from
-# [tools] in dot_config/mise/config.toml.tmpl — which is why mise itself is a
-# common package here rather than a dev_computer one. rbw is the exception: it
-# has no apt package either, but it is needed before chezmoi reads the source
-# state — earlier than any script, mise included — so .install-prerequisites.sh
-# installs it and run_onchange_after_21-rbw only converges it after a pin bump.
+# [tools] in dot_config/mise/config.toml.tmpl. mise itself is absent from this
+# list: it comes from mise.run in run_once_after_23-mise on every machine, so
+# that `mise bootstrap` and self-update work the same way on both OSes. rbw is
+# also absent: it has no apt package, and it is needed before chezmoi reads the
+# source state — earlier than any script, mise included — so
+# .install-prerequisites.sh installs it and run_onchange_after_21-rbw only
+# converges it after a pin bump.
 #
 # ---------------------------------------------------------------------------
 
 [packages.apt]
-to_remove = []
+# See the homebrew to_remove above: mise now comes from mise.run, not the vendor
+# apt repo. Drop this entry once every Debian box has applied.
+to_remove = ["mise"]
 
 [packages.apt.common]
 packages = [
@@ -92,7 +99,6 @@ packages = [
 "jq",
 "lftp",
 "locales",         # so the en_US.UTF-8 that SSH forwards from the Mac exists here
-"mise",            # vendor repo: mise.jdx.dev; common because it owns gron/herdr everywhere
 "openssl",         # SSL/TLS cryptography
 "pinentry-tty",    # rbw's master password prompt; curses has issues with ssh sessions 
 "starship",        # Shell prompt
