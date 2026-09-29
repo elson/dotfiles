@@ -155,7 +155,7 @@ To add a secret: put the item's UUID in `bitwarden.toml`, then reference it from
 
 The vault must be unlocked, but you rarely have to think about it — the prerequisites hook
 runs `rbw unlock` before every source-state read, and the agent then holds the key for
-`lock_timeout`, which the hook sets to 24 hours. To manage it by hand:
+`lock_timeout`, which the hook sets to one week. To manage it by hand:
 
 ```sh
 rbw unlock          # unlock the agent
@@ -206,9 +206,10 @@ Debian does not generate. The prerequisites hook generates it (`locales` +
 `locale-gen`); if warnings persist, check `locale -a | grep en_US` on that box. Boxes you
 only ever reach from a `C.UTF-8` client never see this.
 
-**No password prompt appears and rbw just fails.** `rbw` asks via `pinentry`. It is a
-Homebrew dependency on darwin, but Linux boxes need `pinentry-curses` — it is in the apt
-common list, so an apply installs it.
+**No password prompt appears and rbw just fails.** `rbw` asks via `pinentry-tty`, which
+the hook configures on both OSes. On darwin it ships with Homebrew's `pinentry`, an rbw
+dependency; Linux boxes get the `pinentry-tty` apt package from the hook and the apt
+common list.
 
 **`ssh-add -l` says "Could not open a connection to your authentication agent".** The
 socket only exists once `rbw-agent` has started, and `exports.sh` only exports

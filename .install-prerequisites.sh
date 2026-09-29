@@ -185,19 +185,20 @@ setup_rbw() {
         rbw config set email "${email}" || warn "rbw config set email failed"
     fi
 
-    # 24h, so a working day's worth of applies costs one password prompt.
+    # A week, so a week's worth of applies costs one password prompt.
     # rbw's own default is 3600. Seconds.
-    if ! rbw config show 2>/dev/null | grep -q '"lock_timeout": 86400'; then
-        echo "🔑  Setting rbw lock_timeout to 24h"
-        rbw config set lock_timeout 86400 || warn "rbw config set lock_timeout failed"
+    if ! rbw config show 2>/dev/null | grep -q '"lock_timeout": 604800'; then
+        echo "🔑  Setting rbw lock_timeout to 1 week"
+        rbw config set lock_timeout 604800 || warn "rbw config set lock_timeout failed"
     fi
 
     # pinentry-curses needs a usable ncurses geometry, which it does not get when
     # the rbw client is a hook whose stdio chezmoi owns — it dies with "Screen or
     # window too small". pinentry-tty writes straight to the tty rbw passes it via
-    # --ttyname, with no layout to get wrong. The Linux boxes here are headless,
-    # so there is no GUI pinentry worth preferring.
-    if [ "$(uname -s)" = "Linux" ] && command -v pinentry-tty >/dev/null 2>&1 &&
+    # --ttyname, with no layout to get wrong. Used on darwin too, so the prompt
+    # looks the same everywhere; Homebrew's pinentry (an rbw dependency) is
+    # built with --enable-pinentry-tty.
+    if command -v pinentry-tty >/dev/null 2>&1 &&
         ! rbw config show 2>/dev/null | grep -q '"pinentry": "pinentry-tty"'; then
         echo "🔑  Setting rbw pinentry to pinentry-tty"
         rbw config set pinentry pinentry-tty || warn "rbw config set pinentry failed"
