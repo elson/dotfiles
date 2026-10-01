@@ -99,6 +99,24 @@ for formula in ${formulae[@]}; do
 done
 
 {{ if not .is_ci_workflow }}
+missing_casks=()
+for cask in ${casks[@]}; do
+    _inArray_ -i "${cask}" "${currently_installed_casks[@]}" || missing_casks+=("${cask}")
+done
+
+# Casks that ship a .pkg, or write outside /Applications, run sudo themselves.
+# macOS caches sudo for only 5 minutes, and a run of cask downloads outlasts
+# that, so each one asked again. Prompt once up front, then keep the timestamp
+# fresh until this script exits.
+if [[ ${#missing_casks[@]} -gt 0 ]] && sudo -v; then
+    while kill -0 "$$" 2>/dev/null; do
+        sudo -n true 2>/dev/null
+        sleep 60
+    done &
+    sudo_keepalive=$!
+    trap 'kill "${sudo_keepalive}" 2>/dev/null' EXIT
+fi
+
 for cask in ${casks[@]}; do
     if ! _inArray_ -i "${cask}" "${currently_installed_casks[@]}"; then
         # --adopt takes over an app that was installed by hand instead of
