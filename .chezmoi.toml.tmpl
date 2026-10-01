@@ -28,16 +28,18 @@
 [hooks.apply.post]
     command = "{{ .chezmoi.sourceDir }}/.chezmoi-summary.sh"
 
-{{ if eq .chezmoi.os "linux" -}}
 # rbwFields shells out to this. An absolute path, because chezmoi finds it via
-# its own PATH — and during bootstrap that PATH has no ~/.local/bin: the
-# get.chezmoi.io one-liner runs chezmoi by absolute path, before any shell
-# config exists. Exporting PATH inside the prerequisites hook cannot help, since
+# its own PATH — and during bootstrap that PATH has neither ~/.local/bin nor
+# Homebrew's bin: the get.chezmoi.io one-liner runs chezmoi from a shell that
+# predates both. Exporting PATH inside the prerequisites hook cannot help, since
 # the hook is a child of chezmoi, not its parent.
 [rbw]
+{{- if eq .chezmoi.os "darwin" }}
+    command = "{{ if eq .chezmoi.arch "arm64" }}/opt/homebrew{{ else }}/usr/local{{ end }}/bin/rbw"
+{{- else }}
     command = "{{ .chezmoi.homeDir }}/.local/bin/rbw"
+{{- end }}
 
-{{ end -}}
 [diff]
     {{ if lookPath "delta" -}}command = "delta"
     {{ end -}}

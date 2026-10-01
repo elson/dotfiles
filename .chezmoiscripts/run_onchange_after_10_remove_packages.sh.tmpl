@@ -5,14 +5,18 @@
 
 echo "Checking for packages to remove"
 
-{{ if and (eq .chezmoi.os "darwin") (lookPath "brew") }}
+{{ if eq .chezmoi.os "darwin" }}
 
+{{ template "homebrew_env.bash" . }}
+
+if command -v brew &>/dev/null; then
     {{ range $package := .packages.homebrew.to_remove }}
     if brew list | grep "{{ $package }}" &> /dev/null; then
         brew uninstall "{{ $package }}"
     fi
 
     {{ end }}
+fi
 {{ end }}
 
 {{ if and $debian (lookPath "apt-get") }}

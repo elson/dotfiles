@@ -2,6 +2,15 @@
 #!/usr/bin/env bash
 
 {{ template "shared_script_utils.bash" . }}
+{{ template "homebrew_env.bash" . }}
+
+# Fail rather than carry on: this script always exits 0 otherwise, chezmoi would
+# record it as run with every install failed, and an unchanged run_onchange_
+# script never runs again — the casks and formulae would stay missing for good.
+if ! command -v brew &>/dev/null; then
+    echo "❌  Homebrew not found; re-run chezmoi apply once it is installed" >&2
+    exit 1
+fi
 
 export HOMEBREW_NO_INSTALL_UPGRADE=TRUE
 export HOMEBREW_CASK_OPTS="--appdir=/Applications"
