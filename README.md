@@ -28,19 +28,14 @@ everything installed from a release download goes to `~/.local/bin` without sudo
 
 Install chezmoi, clone this repo, and apply it in one shot.
 
-**macOS**
-
-```sh
-sh -c "$(curl -fsLS get.chezmoi.io)" -- init --apply elson
-```
-
-**Debian / Ubuntu / Proxmox**
+Same command on macOS and Debian / Ubuntu / Proxmox:
 
 ```sh
 sh -c "$(curl -fsLS get.chezmoi.io)" -- -b ~/.local/bin init --apply elson
 ```
 
-`-b ~/.local/bin` keeps chezmoi itself out of `/usr/local`; that directory is added to
+`-b ~/.local/bin` matters: without it the installer drops chezmoi into `./bin` under
+whatever directory you ran it from, which is on no `PATH`. `~/.local/bin` is added to
 `PATH` by the shell config this repo installs.
 
 One apply is enough. Prerequisites that everything else depends on — Xcode CLT and
