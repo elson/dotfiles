@@ -135,7 +135,7 @@ ensure_locale() {
 install_rbw_darwin() {
     command -v brew >/dev/null 2>&1 || return 1
     echo "🔑  Installing rbw"
-    brew install -q rbw || warn "rbw install failed"
+    HOMEBREW_NO_ASK=1 brew install -q rbw || warn "rbw install failed"
 }
 
 install_rbw_debian() {

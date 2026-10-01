@@ -10,3 +10,7 @@ if ! command -v brew &>/dev/null; then
         fi
     done
 fi
+
+# Current Homebrew asks "Proceed? [y/n]" before installing dependencies, which
+# stalls an unattended apply. Equivalent to passing -y / --no-ask everywhere.
+export HOMEBREW_NO_ASK=1
