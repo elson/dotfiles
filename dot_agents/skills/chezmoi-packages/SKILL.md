@@ -66,14 +66,15 @@ For global tools only. Work down this list and stop at the first that fits — t
 
 ## 3. Choose the machine class
 
-Each manager's packages are split into three buckets, and a machine installs `common` plus whichever classes it is:
+Each manager's packages are split into class buckets, and a machine installs `common` plus whichever classes it is:
 
 ```bash
-chezmoi data | jq '{dev_computer, personal_computer}'
+chezmoi data | jq '{dev_computer, personal_computer, work_computer}'
 ```
 
 `common` is the default; reach for a class only when the package genuinely does not belong everywhere. Two constraints are not preferences:
 
+- **`work_computer` exists only under `packages.homebrew`.** It holds work GUI apps, so it has no apt bucket.
 - **GUI apps are darwin-only.** The Linux boxes are headless, so a cask has no apt counterpart to add.
 - **The two managers disagree on names** (`gpg` / `gnupg`, `pygments` / `python3-pygments`). Confirm the name each manager actually uses rather than copying across; some Homebrew formulae have no apt package at all, in which case mechanism 3 covers Linux.
 
@@ -102,7 +103,7 @@ That forces every `run_once_` and `run_onchange_` script to run again, not just 
 
 Deleting a name from an array stops it being installed on **new** machines and uninstalls it from none. Removal is its own declaration:
 
-1. Delete the name from its `common` / `dev_computer` / `personal_computer` array.
+1. Delete the name from its `common` / `dev_computer` / `personal_computer` / `work_computer` array.
 2. Add it to `to_remove` under `[packages.homebrew]` or `[packages.apt]` — the top-level table, not a class bucket.
 3. Apply. `run_onchange_after_10_remove_packages` uninstalls it where present.
 

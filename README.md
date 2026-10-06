@@ -6,8 +6,8 @@ and on Debian-likes (Debian, Ubuntu, Proxmox).
 
 - **Two OS families, one source tree.** Homebrew on darwin, apt plus vendor repos on
   Debian-likes. Every OS-specific script simply renders empty on the other platform.
-- **Machine classes, not hostnames.** Three booleans answered once (`personal_computer`,
-  `dev_computer`, `use_secrets`) decide which package sets and files apply. A headless
+- **Machine classes, not hostnames.** Four booleans answered once (`personal_computer`,
+  `work_computer`, `dev_computer`, `use_secrets`) decide which package sets and files apply. A headless
   homelab box and a daily driver run the same repo.
 - **Secrets stay in Bitwarden.** Nothing encrypted is committed here; templates pull
   fields from the vault at apply time.
@@ -57,13 +57,14 @@ closing summary says so if it applies.
 ### Setup prompts
 
 Asked once on `chezmoi init`, then stored in `~/.config/chezmoi/chezmoi.toml` and never
-asked again. The three booleans take `yes`/`no` (chezmoi also accepts `y`/`n`, `on`/`off`
+asked again. The four booleans take `yes`/`no` (chezmoi also accepts `y`/`n`, `on`/`off`
 and `true`/`false`); they are stored as TOML `true`/`false`:
 
 | Prompt | Data key | What it gates |
 |---|---|---|
 | Use secrets from Bitwarden? | `use_secrets` | `~/.config/aws/credentials`, `~/.config/shell/private.sh`, and the `rbw` install + unlock in the prerequisites hook. `false` makes those targets disappear via `.chezmoiignore`. |
 | Is this a personal computer for daily driving? | `personal_computer` | GUI apps — browsers, Slack, Obsidian, Docker Desktop, Tailscale (darwin only; the Linux boxes are headless). |
+| Is this a work computer? | `work_computer` | Work-only GUI apps — 1Password (darwin only). |
 | Do you do development on this computer? | `dev_computer` | gh, Claude Code, and the language toolchains in the mise config (mise itself goes on every machine). |
 | Email address | `email` | Git identity and the Bitwarden login. |
 

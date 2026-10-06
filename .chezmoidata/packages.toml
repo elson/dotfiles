@@ -52,6 +52,10 @@ formulae = [
 "rclone",
 ]
 
+[packages.homebrew.work_computer]
+casks = ["1password"]
+formulae = []
+
 [packages.homebrew.dev_computer]
 casks = ["bruno", "visual-studio-code"]
 formulae = [

@@ -32,6 +32,12 @@ formulae=(
     "{{ $package }}"
     {{ end }}
     {{ end }}
+
+    {{ if dig "work_computer" false . }}
+    {{ range $package := .packages.homebrew.work_computer.formulae }}
+    "{{ $package }}"
+    {{ end }}
+    {{ end }}
 )
 
 casks=(
@@ -47,6 +53,12 @@ casks=(
 
     {{ if .personal_computer }}
     {{ range $package := .packages.homebrew.personal_computer.casks }}
+    "{{ $package }}"
+    {{ end }}
+    {{ end }}
+
+    {{ if dig "work_computer" false . }}
+    {{ range $package := .packages.homebrew.work_computer.casks }}
     "{{ $package }}"
     {{ end }}
     {{ end }}

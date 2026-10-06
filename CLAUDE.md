@@ -33,10 +33,10 @@ Source filenames encode target attributes; renaming changes behaviour:
 
 ## Template data model
 
-`.chezmoi.toml.tmpl` is the config template: on first `chezmoi init` it prompts (via `promptBoolOnce`/`promptStringOnce`) for `use_secrets`, `personal_computer`, `dev_computer`, `email`, and writes them into `[data]`. Those three booleans are the machine-class switches that gate almost everything else — package sets, mise install, secret rendering. Also defined there: XDG path vars (`.xdgConfigDir`, `.xdgDataDir`, `.xdgScriptsDir`, …) that templates use instead of hardcoding paths.
+`.chezmoi.toml.tmpl` is the config template: on first `chezmoi init` it prompts (via `promptBoolOnce`/`promptStringOnce`) for `use_secrets`, `personal_computer`, `work_computer`, `dev_computer`, `email`, and writes them into `[data]`. Those four booleans are the machine-class switches that gate almost everything else — package sets, mise install, secret rendering. Also defined there: XDG path vars (`.xdgConfigDir`, `.xdgDataDir`, `.xdgScriptsDir`, …) that templates use instead of hardcoding paths.
 
 Static data lives in `.chezmoidata/`, auto-merged into the template namespace:
-- `packages.toml` → `.packages.homebrew.{common,dev_computer,personal_computer}.{formulae,casks}` (darwin) and `.packages.apt.{common,dev_computer,personal_computer}.packages` (Debian-likes), each plus `to_remove`
+- `packages.toml` → `.packages.homebrew.{common,dev_computer,personal_computer,work_computer}.{formulae,casks}` (darwin) and `.packages.apt.{common,dev_computer,personal_computer}.packages` (Debian-likes), each plus `to_remove`. `work_computer` is darwin-only, and the Homebrew script reads it with `dig "work_computer" false .` rather than `.work_computer`: a machine whose config predates the prompt has no such key until `chezmoi init` is re-run, and a plain field access would abort the apply under `missingkey=error`.
 - `packages.yaml` → `.versions.<tool>` = pinned versions for the tools installed from a release download. `rbw` is the only one left: apt owns upgrades for repo-backed packages, `claude` and `mise` self-update, and `gron`/`herdr` are mise `[tools]`.
 - `bitwarden.toml` → `.bitwarden.items.<name>` = Bitwarden item UUIDs
 

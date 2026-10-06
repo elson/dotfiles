@@ -1,5 +1,6 @@
 {{- $use_secrets := promptBoolOnce . "use_secrets" "Use secrets from Bitwarden? (yes/no)" -}}
 {{- $personal_computer := promptBoolOnce . "personal_computer" "Is this a personal computer for daily driving? (yes/no)" -}}
+{{- $work_computer := promptBoolOnce . "work_computer" "Is this a work computer? (yes/no)" -}}
 {{- $dev_computer := promptBoolOnce . "dev_computer" "Do you do development on this computer? (yes/no)" -}}
 {{- $email := promptStringOnce . "email" "Email address" -}}
 
@@ -8,6 +9,7 @@
     github_user       = "elson"
     dev_computer      = {{ $dev_computer }}
     personal_computer = {{ $personal_computer }}
+    work_computer     = {{ $work_computer }}
     is_ci_workflow    = false # Set true only in CI test
     use_secrets       = {{ $use_secrets }}
     xdgCacheDir       = "{{ .chezmoi.homeDir }}/.cache"
