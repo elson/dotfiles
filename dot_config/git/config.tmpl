@@ -18,3 +18,9 @@
   process = git-lfs filter-process
   required = true
 {{ end -}}
+{{ if .work_computer -}}
+[includeIf "hasconfig:remote.*.url:https://github.com/dash0hq/**"]
+  path = dash0.inc
+[includeIf "hasconfig:remote.*.url:git@github.com:dash0hq/**"]
+  path = dash0.inc
+{{ end -}}
