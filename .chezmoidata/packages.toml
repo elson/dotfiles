@@ -27,6 +27,7 @@ formulae = [
 
 [packages.homebrew.personal_computer]
 casks = [
+"claude",     # desktop app; the claude CLI comes from run_once_after_22-claude-code
 "zen",
 "firefox",
 "google-chrome",
