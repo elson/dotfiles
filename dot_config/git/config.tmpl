@@ -9,7 +9,10 @@
   # Empty value resets helpers inherited from system config (Homebrew sets
   # osxkeychain, whose stored github.com login can be the wrong account).
   helper =
-  helper = !gh auth git-credential
+  helper = {{ .xdgConfigDir }}/git/gh-credential-helper
+# The helper picks the account by org, which needs the repo path.
+[credential "https://github.com"]
+  useHttpPath = true
 {{ end -}}
 {{ if .dev_computer -}}
 [filter "lfs"]
@@ -18,7 +21,7 @@
   process = git-lfs filter-process
   required = true
 {{ end -}}
-{{ if .work_computer -}}
+{{ if dig "work_computer" false . -}}
 [includeIf "hasconfig:remote.*.url:https://github.com/dash0hq/**"]
   path = dash0.inc
 [includeIf "hasconfig:remote.*.url:git@github.com:dash0hq/**"]
