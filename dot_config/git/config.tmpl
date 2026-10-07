@@ -6,6 +6,9 @@
    user = {{ .github_user }}
 {{ if lookPath "gh" -}}
 [credential]
+  # Empty value resets helpers inherited from system config (Homebrew sets
+  # osxkeychain, whose stored github.com login can be the wrong account).
+  helper =
   helper = !gh auth git-credential
 {{ end -}}
 {{ if .dev_computer -}}
