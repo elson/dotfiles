@@ -63,6 +63,7 @@ formulae = [
 "awscli",
 "biome", # the global VS Code default formatter
 "gh",
+"git-lfs", # large files in work repos; the LFS filter is set in dot_config/git/config.tmpl
 "pnpm",  # not a mise tool: pnpm 12 ships no darwin/amd64 binary, so only brew's source build runs on the Intel Mac
 "peak/tap/s5cmd",             # fast S3 client for the runpod buckets
 "runpod/runpodctl/runpodctl",
@@ -129,6 +130,7 @@ packages = [
 "tmux",            # Terminal multiplexer
 "mosh",            # client and server in one package; only dev boxes are moshable
 "gh",              # vendor repo: cli.github.com
+"git-lfs",         # large files in work repos; the LFS filter is set in dot_config/git/config.tmpl
 ]
 
 # Linux boxes are headless; GUI apps are darwin-only.
