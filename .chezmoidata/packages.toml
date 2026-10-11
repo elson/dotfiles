@@ -43,6 +43,7 @@ casks = [
 "spotify",
 "syncthing-app",
 "tailscale-app",
+"typewhisper/tap/typewhisper",
 "veracrypt",  # pulls in macfuse as a cask dependency
 "vlc",
 "xnviewmp",

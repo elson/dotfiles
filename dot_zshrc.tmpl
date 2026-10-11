@@ -29,6 +29,10 @@ fi
 # ------------------------------- ANTIGEN ---------------------------------
 
 ### Antigen
+# Docker Desktop appends its own fpath + compinit block to ~/.zshrc; this replaces
+# it, and must precede `antigen apply`, which runs compinit.
+[ ! -d ~/.docker/completions ] || fpath=(~/.docker/completions $fpath)
+
 export ADOTDIR="{{ .xdgDataDir }}/antigen"
 [ ! -f "{{ .xdgScriptsDir }}/antigen.zsh" ] || source "{{ .xdgScriptsDir }}/antigen.zsh"
 
