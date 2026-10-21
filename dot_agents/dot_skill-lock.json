@@ -287,6 +287,15 @@
       "installedAt": "2026-09-07T19:35:50.328Z",
       "updatedAt": "2026-09-07T19:35:50.328Z",
       "localModifications": "Global-scope guidance rewritten: ~/.config/mise/config.toml is a chezmoi target here, so mise use -g / mise set -g are removed in favour of editing dot_config/mise/config.toml.tmpl. The curl https://mise.run installer is replaced by chezmoi apply. evals/ dropped."
+    },
+    "herdr": {
+      "source": "herdrdev/herdr",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/herdrdev/herdr.git",
+      "skillPath": "skills/herdr/SKILL.md",
+      "skillFolderHash": "2be0d86d481d1bb29c62e11ef37b78d27d01b478",
+      "installedAt": "2026-10-21T07:40:13.687Z",
+      "updatedAt": "2026-10-21T07:40:13.687Z"
     }
   },
   "dismissed": {
